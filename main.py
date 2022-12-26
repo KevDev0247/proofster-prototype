@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 from enum import Enum
 import fileinput
-from typing import List
 
 
 class Quantifier(Enum):
@@ -13,6 +12,8 @@ class Quantifier(Enum):
 class Connective(Enum):
     IMPLICATION = 1
     BICONDITIONAL = 2
+    AND = 3
+    OR = 4
 
 
 class Expression(ABC):
@@ -39,6 +40,10 @@ class Binary(Expression):
             print(" ⇒ ", end="")
         if self.connective == Connective.BICONDITIONAL:
             print(" ⇔ ", end="")
+        if self.connective == Connective.AND:
+            print(" ∧ ", end="")
+        if self.connective == Connective.OR:
+            print(" ∨ ", end="")
         self.formula_two.print_expression()
         print(")", end="")
 
@@ -59,13 +64,11 @@ class Unary(Expression):
     def print_expression(self):
         if self.negation:
             print("¬", end="")
-        if self.quantifier != Quantifier.EXISTENTIAL:
+        if self.quantifier == Quantifier.EXISTENTIAL:
             print("∃" + self.variable, end="")
-        if self.quantifier != Quantifier.UNIVERSAL:
+        if self.quantifier == Quantifier.UNIVERSAL:
             print("∀" + self.variable, end="")
-        print("(", end="")
         self.formula.print_expression()
-        print(")", end="")
 
     def set(self, var: str):
         self.formula.set(var)
@@ -123,6 +126,7 @@ def input_formula(formulaInput: [Expression]) -> [Expression]:
     for index, part in enumerate(formulaInput):
         if part == "->":
             second = f.pop()
+            second.print_expression()
             first = f.pop()
 
             binary = Binary(first, second, Connective.IMPLICATION)
@@ -133,6 +137,18 @@ def input_formula(formulaInput: [Expression]) -> [Expression]:
 
             binary = Binary(first, second, Connective.BICONDITIONAL)
             f.append(binary)
+        if part == "AND":
+            second = f.pop()
+            first = f.pop()
+
+            binary = Binary(first, second, Connective.AND)
+            f.append(binary)
+        if part == "OR":
+            second = f.pop()
+            first = f.pop()
+
+            binary = Binary(first, second, Connective.OR)
+            f.append(binary)
         if part == "FORM":
             func_name = inputList[index + 1]
             var_name = inputList[index + 2]
@@ -140,7 +156,7 @@ def input_formula(formulaInput: [Expression]) -> [Expression]:
             variable = Variable(var_name)
             function = Function(func_name, variable)
             f.append(function)
-        if part == "NEG":
+        if part == "NOT":
             first = f.pop()
 
             unary = Unary(first, Quantifier.NONE, True, "")
@@ -160,18 +176,20 @@ def input_formula(formulaInput: [Expression]) -> [Expression]:
     return f
 
 
-def input_commands(commandInput: [], f: [Expression]):
+def input_commands(commandInput: [], fs: [[Expression]]):
     for part in commandInput:
         if part == "print":
-            f[len(f) - 1].print_expression()
+            for f in fs:
+                f[len(f) - 1].print_expression()
+                print("")
 
 
-formula = []
+formulas = []
 for line in fileinput.input(files='test1.txt'):
     inputList = line.split()
     label = inputList[0]
     inputList.pop(0)
     if label == "input":
-        formula = input_formula(inputList)
+        formulas.append(input_formula(inputList))
     if label == "command":
-        input_commands(inputList, formula)
+        input_commands(inputList, formulas)

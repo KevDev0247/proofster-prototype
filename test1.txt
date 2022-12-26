@@ -1,2 +1,5 @@
-input FORM G x FORM F x ->
+input FORM F y FORM G y AND FORM F x FORM G x -> OR EXIST y FORALL x
+input FORM F x FORM H y NOT -> FORALL x
+input FORM F x FORM G y NOT -> FORALL x
+input FORM F x NOT FORALL x
 command print
