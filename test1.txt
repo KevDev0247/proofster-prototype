@@ -1,0 +1,2 @@
+input FORM G x FORM F x ->
+command print

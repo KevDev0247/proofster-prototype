@@ -1,5 +1,7 @@
 from abc import ABC, abstractmethod
 from enum import Enum
+import fileinput
+from typing import List
 
 
 class Quantifier(Enum):
@@ -31,14 +33,14 @@ class Binary(Expression):
         self.valueSet = False
 
     def print_expression(self):
-        print("(")
+        print("(", end="")
         self.formula_one.print_expression()
         if self.connective == Connective.IMPLICATION:
-            print(" ⇒ ")
+            print(" ⇒ ", end="")
         if self.connective == Connective.BICONDITIONAL:
-            print(" ⇔ ")
+            print(" ⇔ ", end="")
         self.formula_two.print_expression()
-        print(")")
+        print(")", end="")
 
     def set(self, var: str):
         self.formula_one.set(var)
@@ -56,14 +58,14 @@ class Unary(Expression):
 
     def print_expression(self):
         if self.negation:
-            print("¬")
+            print("¬", end="")
         if self.quantifier != Quantifier.EXISTENTIAL:
-            print("∃" + self.variable)
+            print("∃" + self.variable, end="")
         if self.quantifier != Quantifier.UNIVERSAL:
-            print("∀" + self.variable)
-        print("(")
+            print("∀" + self.variable, end="")
+        print("(", end="")
         self.formula.print_expression()
-        print(")")
+        print(")", end="")
 
     def set(self, var: str):
         self.formula.set(var)
@@ -76,21 +78,21 @@ class Variable(Expression):
         self.valueSet = False
 
     def print_expression(self):
-        print(self.var)
+        print(self.var, end="")
 
     def set(self, var):
         self.var = var
 
 
 class Function(Expression):
-    def __init__(self, name: str, variable: Variable):
+    def __init__(self, name: str, v: Variable):
         self.name = name
-        self.variable = variable
+        self.variable = v
 
     def print_expression(self):
-        print(self.name + "(")
+        print(self.name + "(", end="")
         self.variable.print_expression()
-        print(")")
+        print(")", end="")
 
     def set(self, var):
         self.variable.set(var)
@@ -116,38 +118,60 @@ class ResolutionProver:
         pass
 
 
+def input_formula(formulaInput: [Expression]) -> [Expression]:
+    f = []
+    for index, part in enumerate(formulaInput):
+        if part == "->":
+            second = f.pop()
+            first = f.pop()
+
+            binary = Binary(first, second, Connective.IMPLICATION)
+            f.append(binary)
+        if part == "<->":
+            second = f.pop()
+            first = f.pop()
+
+            binary = Binary(first, second, Connective.BICONDITIONAL)
+            f.append(binary)
+        if part == "FORM":
+            func_name = inputList[index + 1]
+            var_name = inputList[index + 2]
+
+            variable = Variable(var_name)
+            function = Function(func_name, variable)
+            f.append(function)
+        if part == "NEG":
+            first = f.pop()
+
+            unary = Unary(first, Quantifier.NONE, True, "")
+            f.append(unary)
+        if part == "FORALL":
+            first = f.pop()
+
+            unary = Unary(first, Quantifier.UNIVERSAL, False, inputList[index + 1])
+            f.append(unary)
+        if part == "EXIST":
+            first = f.pop()
+
+            unary = Unary(first, Quantifier.EXISTENTIAL, False, inputList[index + 1])
+            f.append(unary)
+        if part == "done":
+            break
+    return f
+
+
+def input_commands(commandInput: [], f: [Expression]):
+    for part in commandInput:
+        if part == "print":
+            f[len(f) - 1].print_expression()
+
+
 formula = []
-
-print("Enter your formula: ")
-inputList = input().split()
-for index, part in enumerate(inputList):
-    if part == "->":
-        second = formula.pop()
-        first = formula.pop()
-
-        binary = Binary(first, second, Connective.IMPLICATION)
-        formula.append(binary)
-    if part == "<->":
-        second = formula.pop()
-        first = formula.pop()
-
-        binary = Binary(first, second, Connective.BICONDITIONAL)
-        formula.append(binary)
-    if part == "NEG":
-        first = formula.pop()
-
-        unary = Unary(first, Quantifier.NONE, True, "")
-        formula.append(unary)
-    if part == "forall":
-        first = formula.pop()
-
-        unary = Unary(first, Quantifier.UNIVERSAL, False, inputList[index + 1])
-        formula.append(unary)
-    if part == "exist":
-        first = formula.pop()
-
-        unary = Unary(first, Quantifier.EXISTENTIAL, False, inputList[index + 1])
-        formula.append(unary)
-    if part == "done":
-        break
-
+for line in fileinput.input(files='test1.txt'):
+    inputList = line.split()
+    label = inputList[0]
+    inputList.pop(0)
+    if label == "input":
+        formula = input_formula(inputList)
+    if label == "command":
+        input_commands(inputList, formula)
