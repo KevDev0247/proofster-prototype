@@ -3,3 +3,4 @@ input FORM F x FORM H y NOT -> FORALL x
 input FORM F x FORM G y NOT -> FORALL x
 input FORM F x NOT FORALL x
 command print
+command resolve

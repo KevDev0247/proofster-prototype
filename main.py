@@ -16,7 +16,17 @@ class Connective(Enum):
     OR = 4
 
 
+class Type(Enum):
+    UNARY = 1
+    BINARY = 2
+    FUNCTION = 3
+    VARIABLE = 4
+
+
 class Expression(ABC):
+    def __init__(self, formulaType: Type):
+        self.formulaType = formulaType
+
     @abstractmethod
     def print_expression(self):
         pass
@@ -28,6 +38,7 @@ class Expression(ABC):
 
 class Binary(Expression):
     def __init__(self, exp1: Expression, exp2: Expression, connective: Connective):
+        super().__init__(Type.BINARY)
         self.formula_one = exp1
         self.connective = connective
         self.formula_two = exp2
@@ -55,6 +66,7 @@ class Binary(Expression):
 
 class Unary(Expression):
     def __init__(self, exp: Expression, quant: Quantifier, neg: bool, var: str):
+        super().__init__(Type.UNARY)
         self.quantifier = quant
         self.formula = exp
         self.variable = var
@@ -77,6 +89,7 @@ class Unary(Expression):
 
 class Variable(Expression):
     def __init__(self, var):
+        super().__init__(Type.VARIABLE)
         self.var = var
         self.valueSet = False
 
@@ -89,6 +102,7 @@ class Variable(Expression):
 
 class Function(Expression):
     def __init__(self, name: str, var: Variable):
+        super().__init__(Type.FUNCTION)
         self.name = name
         self.variable = var
 
@@ -103,13 +117,18 @@ class Function(Expression):
 
 class ResolutionProver:
     def __init__(self, arg: [Expression]):
-        self.argument = arg
+        self.arg = arg
         self.setOfSupport = []
 
+    def print_argument(self):
+        for formulas in self.arg:
+            formulas[0].print_expression()
+            print("")
+
     def negate_conclusion(self):
-        conclusion = self.argument.pop()
+        conclusion = self.arg.pop().pop()
         unary = Unary(conclusion, Quantifier.NONE, True, "")
-        self.argument.append(unary)
+        self.arg.append([unary])
 
     def check_resolvable(self):
         # check if function name is the same
@@ -117,9 +136,35 @@ class ResolutionProver:
         # check if it's the same after assignment
         pass
 
-    def get_prenex(self):
+    def compute_prenex_recursively(self, formula: Expression):
+        if formula.formulaType == Type.BINARY:
+            new_formula_one = self.compute_prenex_recursively(formula.formula_one)
+            new_formula_two = self.compute_prenex_recursively(formula.formula_two)
+            if formula.connective == Connective.IMPLICATION:
+                formula.formula_one = Unary(new_formula_one, Quantifier.NONE, True, "")
+                formula.formula_two = new_formula_two
+                formula.connective = Connective.OR
+            if formula.connective == Connective.BICONDITIONAL:
+                formula.formula_one = Binary(
+                    new_formula_one,
+                    new_formula_two,
+                    Connective.AND
+                )
+                formula.formula_two = Binary(
+                    Unary(new_formula_one, Quantifier.NONE, True, ""),
+                    Unary(new_formula_two, Quantifier.NONE, True, ""),
+                    Connective.AND
+                )
+                formula.connective = Connective.OR
+        if formula.formulaType == Type.UNARY:
+            formula.formula = self.compute_prenex_recursively(formula.formula)
+        return formula
 
-        pass
+    def get_prenex(self):
+        for formulas in self.arg:
+            formula = formulas.pop()
+            new_formula = self.compute_prenex_recursively(formula)
+            formulas.append(new_formula)
 
     def get_most_common_var(self):
         pass
@@ -197,11 +242,17 @@ def input_commands(commandInput: [], args: [[Expression]]):
 
 def apply_resolution(arg: [Expression]):
     resolver = ResolutionProver(arg)
+
+    print("Negate conclusion yield")
     resolver.negate_conclusion()
+    resolver.print_argument()
+
+    resolver.get_prenex()
+    resolver.print_argument()
 
 
 argument = []
-for line in fileinput.input(files='test2.txt'):
+for line in fileinput.input(files='test1.txt'):
     inputList = line.split()
     label = inputList[0]
     inputList.pop(0)
