@@ -39,14 +39,14 @@ class Expression(ABC):
 class Binary(Expression):
     def __init__(self, exp1: Expression, exp2: Expression, connective: Connective):
         super().__init__(Type.BINARY)
-        self.formula_one = exp1
+        self.left = exp1
         self.connective = connective
-        self.formula_two = exp2
+        self.right = exp2
         self.valueSet = False
 
     def print_expression(self):
         print("(", end="")
-        self.formula_one.print_expression()
+        self.left.print_expression()
         if self.connective == Connective.IMPLICATION:
             print(" ⇒ ", end="")
         if self.connective == Connective.BICONDITIONAL:
@@ -55,12 +55,12 @@ class Binary(Expression):
             print(" ∧ ", end="")
         if self.connective == Connective.OR:
             print(" ∨ ", end="")
-        self.formula_two.print_expression()
+        self.right.print_expression()
         print(")", end="")
 
     def set(self, var: str):
-        self.formula_one.set(var)
-        self.formula_two.set(var)
+        self.left.set(var)
+        self.right.set(var)
         self.valueSet = True
 
 
@@ -68,7 +68,7 @@ class Unary(Expression):
     def __init__(self, exp: Expression, quant: Quantifier, neg: bool, var: str):
         super().__init__(Type.UNARY)
         self.quantifier = quant
-        self.formula = exp
+        self.inside = exp
         self.variable = var
         self.negation = neg
         self.valueSet = True
@@ -80,10 +80,10 @@ class Unary(Expression):
             print("∃" + self.variable, end="")
         if self.quantifier == Quantifier.UNIVERSAL:
             print("∀" + self.variable, end="")
-        self.formula.print_expression()
+        self.inside.print_expression()
 
     def set(self, var: str):
-        self.formula.set(var)
+        self.inside.set(var)
         self.valueSet = True
 
 
@@ -136,34 +136,34 @@ class ResolutionProver:
         # check if it's the same after assignment
         pass
 
-    def compute_prenex_recursively(self, formula: Expression):
+    def remove_arrows_recursively(self, formula: Expression):
         if formula.formulaType == Type.BINARY:
-            new_formula_one = self.compute_prenex_recursively(formula.formula_one)
-            new_formula_two = self.compute_prenex_recursively(formula.formula_two)
+            new_left = self.remove_arrows_recursively(formula.left)
+            new_right = self.remove_arrows_recursively(formula.right)
             if formula.connective == Connective.IMPLICATION:
-                formula.formula_one = Unary(new_formula_one, Quantifier.NONE, True, "")
-                formula.formula_two = new_formula_two
+                formula.left = Unary(new_left, Quantifier.NONE, True, "")
+                formula.right = new_right
                 formula.connective = Connective.OR
             if formula.connective == Connective.BICONDITIONAL:
-                formula.formula_one = Binary(
-                    new_formula_one,
-                    new_formula_two,
+                formula.left = Binary(
+                    new_left,
+                    new_right,
                     Connective.AND
                 )
-                formula.formula_two = Binary(
-                    Unary(new_formula_one, Quantifier.NONE, True, ""),
-                    Unary(new_formula_two, Quantifier.NONE, True, ""),
+                formula.right = Binary(
+                    Unary(new_left, Quantifier.NONE, True, ""),
+                    Unary(new_right, Quantifier.NONE, True, ""),
                     Connective.AND
                 )
                 formula.connective = Connective.OR
         if formula.formulaType == Type.UNARY:
-            formula.formula = self.compute_prenex_recursively(formula.formula)
+            formula.inside = self.remove_arrows_recursively(formula.inside)
         return formula
 
     def get_prenex(self):
         for formulas in self.arg:
             formula = formulas.pop()
-            new_formula = self.compute_prenex_recursively(formula)
+            new_formula = self.remove_arrows_recursively(formula)
             formulas.append(new_formula)
 
     def get_most_common_var(self):
