@@ -27,10 +27,10 @@ class Expression(ABC):
 
 
 class Binary(Expression):
-    def __init__(self, e1: Expression, e2: Expression, c: Connective):
-        self.formula_one = e1
-        self.connective = c
-        self.formula_two = e2
+    def __init__(self, exp1: Expression, exp2: Expression, connective: Connective):
+        self.formula_one = exp1
+        self.connective = connective
+        self.formula_two = exp2
         self.valueSet = False
 
     def print_expression(self):
@@ -54,11 +54,11 @@ class Binary(Expression):
 
 
 class Unary(Expression):
-    def __init__(self, e: Expression, q: Quantifier, n: bool, v: str):
-        self.quantifier = q
-        self.formula = e
-        self.variable = v
-        self.negation = n
+    def __init__(self, exp: Expression, quant: Quantifier, neg: bool, var: str):
+        self.quantifier = quant
+        self.formula = exp
+        self.variable = var
+        self.negation = neg
         self.valueSet = True
 
     def print_expression(self):
@@ -88,9 +88,9 @@ class Variable(Expression):
 
 
 class Function(Expression):
-    def __init__(self, name: str, v: Variable):
+    def __init__(self, name: str, var: Variable):
         self.name = name
-        self.variable = v
+        self.variable = var
 
     def print_expression(self):
         print(self.name + "(", end="")
@@ -102,13 +102,23 @@ class Function(Expression):
 
 
 class ResolutionProver:
-    def __init__(self):
+    def __init__(self, arg: [Expression]):
+        self.argument = arg
         self.setOfSupport = []
+
+    def negate_conclusion(self):
+        conclusion = self.argument.pop()
+        unary = Unary(conclusion, Quantifier.NONE, True, "")
+        self.argument.append(unary)
 
     def check_resolvable(self):
         # check if function name is the same
         # check if one is negated
         # check if it's the same after assignment
+        pass
+
+    def get_prenex(self):
+
         pass
 
     def get_most_common_var(self):
@@ -126,7 +136,6 @@ def input_formula(formulaInput: [Expression]) -> [Expression]:
     for index, part in enumerate(formulaInput):
         if part == "->":
             second = f.pop()
-            second.print_expression()
             first = f.pop()
 
             binary = Binary(first, second, Connective.IMPLICATION)
@@ -176,20 +185,27 @@ def input_formula(formulaInput: [Expression]) -> [Expression]:
     return f
 
 
-def input_commands(commandInput: [], fs: [[Expression]]):
+def input_commands(commandInput: [], args: [[Expression]]):
     for part in commandInput:
         if part == "print":
-            for f in fs:
-                f[len(f) - 1].print_expression()
+            for arg in args:
+                arg[len(arg) - 1].print_expression()
                 print("")
+        if part == "resolve":
+            apply_resolution(argument)
 
 
-formulas = []
-for line in fileinput.input(files='test1.txt'):
+def apply_resolution(arg: [Expression]):
+    resolver = ResolutionProver(arg)
+    resolver.negate_conclusion()
+
+
+argument = []
+for line in fileinput.input(files='test2.txt'):
     inputList = line.split()
     label = inputList[0]
     inputList.pop(0)
     if label == "input":
-        formulas.append(input_formula(inputList))
+        argument.append(input_formula(inputList))
     if label == "command":
-        input_commands(inputList, formulas)
+        input_commands(inputList, argument)

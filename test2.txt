@@ -1,0 +1,2 @@
+input FORM R y EXIST y FORM S y NOT FORALL y AND FORM Q y NOT EXIST y NOT -> FORALL x
+command print
