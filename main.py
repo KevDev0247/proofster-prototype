@@ -180,28 +180,28 @@ def input_formula(formulaInput: [Expression]) -> [Expression]:
     f = []
     for index, part in enumerate(formulaInput):
         if part == "->":
-            second = f.pop()
-            first = f.pop()
+            right = f.pop()
+            left = f.pop()
 
-            binary = Binary(first, second, Connective.IMPLICATION)
+            binary = Binary(left, right, Connective.IMPLICATION)
             f.append(binary)
         if part == "<->":
-            second = f.pop()
-            first = f.pop()
+            right = f.pop()
+            left = f.pop()
 
-            binary = Binary(first, second, Connective.BICONDITIONAL)
+            binary = Binary(left, right, Connective.BICONDITIONAL)
             f.append(binary)
         if part == "AND":
-            second = f.pop()
-            first = f.pop()
+            right = f.pop()
+            left = f.pop()
 
-            binary = Binary(first, second, Connective.AND)
+            binary = Binary(left, right, Connective.AND)
             f.append(binary)
         if part == "OR":
-            second = f.pop()
-            first = f.pop()
+            right = f.pop()
+            left = f.pop()
 
-            binary = Binary(first, second, Connective.OR)
+            binary = Binary(left, right, Connective.OR)
             f.append(binary)
         if part == "FORM":
             func_name = inputList[index + 1]
@@ -211,19 +211,19 @@ def input_formula(formulaInput: [Expression]) -> [Expression]:
             function = Function(func_name, variable)
             f.append(function)
         if part == "NOT":
-            first = f.pop()
+            inside = f.pop()
 
-            unary = Unary(first, Quantifier.NONE, True, "")
+            unary = Unary(inside, Quantifier.NONE, True, "")
             f.append(unary)
         if part == "FORALL":
-            first = f.pop()
+            inside = f.pop()
 
-            unary = Unary(first, Quantifier.UNIVERSAL, False, inputList[index + 1])
+            unary = Unary(inside, Quantifier.UNIVERSAL, False, inputList[index + 1])
             f.append(unary)
         if part == "EXIST":
-            first = f.pop()
+            inside = f.pop()
 
-            unary = Unary(first, Quantifier.EXISTENTIAL, False, inputList[index + 1])
+            unary = Unary(inside, Quantifier.EXISTENTIAL, False, inputList[index + 1])
             f.append(unary)
         if part == "done":
             break
@@ -233,9 +233,11 @@ def input_formula(formulaInput: [Expression]) -> [Expression]:
 def input_commands(commandInput: [], args: [[Expression]]):
     for part in commandInput:
         if part == "print":
+            print("Printing argument")
             for arg in args:
                 arg[len(arg) - 1].print_expression()
                 print("")
+            print("")
         if part == "resolve":
             apply_resolution(argument)
 
@@ -246,13 +248,16 @@ def apply_resolution(arg: [Expression]):
     print("Negate conclusion yield")
     resolver.negate_conclusion()
     resolver.print_argument()
+    print("")
 
+    print("Removing arrows yield")
     resolver.get_prenex()
     resolver.print_argument()
+    print("")
 
 
 argument = []
-for line in fileinput.input(files='test1.txt'):
+for line in fileinput.input(files='test2.txt'):
     inputList = line.split()
     label = inputList[0]
     inputList.pop(0)
