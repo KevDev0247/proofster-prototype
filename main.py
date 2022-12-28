@@ -229,12 +229,9 @@ class ResolutionProver:
         for formulas in self.arg:
             formula = formulas.pop()
             if formula.formulaType == Type.UNARY:
-                new_formula = self.move_negation_inward(formula, formula.negation)
+                new_formula = self.move_negation_inward(formula, False)
                 new_formula.quantifier = formula.quantifier
                 new_formula.set_var_list(formula.varList)
-                print("missing ")
-                new_formula.print_expression()
-                print("")
                 formulas.append(new_formula)
             if formula.formulaType == Type.BINARY:
                 new_formula = self.move_negation_inward(formula, False)
