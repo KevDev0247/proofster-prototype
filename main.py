@@ -26,7 +26,7 @@ class Type(Enum):
 class Expression(ABC):
     def __init__(self, formulaType: Type):
         self.formulaType = formulaType
-        self.varCount = {}
+        self.varList = []
 
     @abstractmethod
     def print_expression(self):
@@ -36,8 +36,8 @@ class Expression(ABC):
     def set(self, var: str):
         pass
 
-    def set_var_count(self, varCount: {}):
-        self.varCount = varCount
+    def set_var_list(self, varList: []):
+        self.varList = varList
 
 
 class Binary(Expression):
@@ -73,7 +73,7 @@ class Unary(Expression):
         super().__init__(Type.UNARY)
         self.quantifier = quant
         self.inside = exp
-        self.variable = var
+        self.quantVar = var
         self.negation = neg
         self.valueSet = True
 
@@ -81,9 +81,9 @@ class Unary(Expression):
         if self.negation:
             print("¬", end="")
         if self.quantifier == Quantifier.EXISTENTIAL:
-            print("∃" + self.variable, end="")
+            print("∃" + self.quantVar, end="")
         if self.quantifier == Quantifier.UNIVERSAL:
-            print("∀" + self.variable, end="")
+            print("∀" + self.quantVar, end="")
         self.inside.print_expression()
 
     def set(self, var: str):
@@ -94,14 +94,14 @@ class Unary(Expression):
 class Variable(Expression):
     def __init__(self, var):
         super().__init__(Type.VARIABLE)
-        self.var = var
+        self.varName = var
         self.valueSet = False
 
     def print_expression(self):
-        print(self.var, end="")
+        print(self.varName, end="")
 
     def set(self, var):
-        self.var = var
+        self.varName = var
 
 
 class Function(Expression):
@@ -132,6 +132,7 @@ class ResolutionProver:
     def negate_conclusion(self):
         conclusion = self.arg.pop().pop()
         unary = Unary(conclusion, Quantifier.NONE, True, "")
+        unary.set_var_list(conclusion.varList)
         self.arg.append([unary])
 
     def check_resolvable(self):
@@ -196,8 +197,22 @@ class ResolutionProver:
 
         return formula
 
-    def standardize_variables(self, formula: Expression):
-        pass
+    def standardize_variables(self, formula: Expression, var: str, varCount: int):
+        if formula.formulaType == Type.UNARY:
+            if formula.quantifier != Quantifier.NONE:
+                varCount += 1
+                formula.quantVar = var + str(varCount)
+            formula.inside = self.standardize_variables(formula.inside, var, varCount)
+        elif formula.formulaType == Type.BINARY:
+            formula.left = self.standardize_variables(formula.left, var, varCount)
+            formula.right = self.standardize_variables(formula.right, var, varCount)
+        elif formula.formulaType == Type.FUNCTION:
+            if formula.variable.varName == var and varCount != 0:
+                formula.set(var + str(varCount))
+        else:
+            if formula.varName == var:
+                formula.set(var + str(varCount))
+        return formula
 
     def get_prenex(self):
         print("Executing Sub step 1. removing arrows")
@@ -212,14 +227,20 @@ class ResolutionProver:
             formula = formulas.pop()
             if formula.formulaType == Type.UNARY:
                 new_formula = self.move_negation_inward(formula.inside, formula.negation)
+                new_formula.set_var_list(formula.varList)
                 formulas.append(new_formula)
             if formula.formulaType == Type.BINARY:
                 new_formula = self.move_negation_inward(formula, False)
+                new_formula.set_var_list(formula.varList)
                 formulas.append(new_formula)
         self.print_argument()
 
         print("Executing Sub step 3. standardize variables")
-
+        for formulas in self.arg:
+            formula = formulas[0]
+            for var in formula.varList:
+                formulas[0] = self.standardize_variables(formula, var, 0)
+        self.print_argument()
         print("")
 
     def get_most_common_var(self):
@@ -234,7 +255,7 @@ class ResolutionProver:
 
 def input_formula(formulaInput: [Expression]) -> [Expression]:
     formula = []
-    var_count = {}
+    var_list = []
 
     for index, part in enumerate(formulaInput):
         if part == "->":
@@ -265,10 +286,8 @@ def input_formula(formulaInput: [Expression]) -> [Expression]:
             func_name = inputList[index + 1]
             var_name = inputList[index + 2]
 
-            if var_name in var_count:
-                var_count[var_name] += 1
-            else:
-                var_count[var_name] = 1
+            if var_name not in var_list:
+                var_list.append(var_name)
 
             variable = Variable(var_name)
             function = Function(func_name, variable)
@@ -291,7 +310,7 @@ def input_formula(formulaInput: [Expression]) -> [Expression]:
         if part == "done":
             break
 
-    formula[0].set_var_count(var_count)
+    formula[0].set_var_list(var_list)
     return formula
 
 
