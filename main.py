@@ -26,6 +26,7 @@ class Type(Enum):
 class Expression(ABC):
     def __init__(self, formulaType: Type):
         self.formulaType = formulaType
+        self.varCount = {}
 
     @abstractmethod
     def print_expression(self):
@@ -34,6 +35,9 @@ class Expression(ABC):
     @abstractmethod
     def set(self, var: str):
         pass
+
+    def set_var_count(self, varCount: {}):
+        self.varCount = varCount
 
 
 class Binary(Expression):
@@ -136,10 +140,10 @@ class ResolutionProver:
         # check if it's the same after assignment
         pass
 
-    def remove_arrows_recursively(self, formula: Expression):
+    def remove_arrows(self, formula: Expression):
         if formula.formulaType == Type.BINARY:
-            new_left = self.remove_arrows_recursively(formula.left)
-            new_right = self.remove_arrows_recursively(formula.right)
+            new_left = self.remove_arrows(formula.left)
+            new_right = self.remove_arrows(formula.right)
             if formula.connective == Connective.IMPLICATION:
                 formula.left = Unary(new_left, Quantifier.NONE, True, "")
                 formula.right = new_right
@@ -157,7 +161,7 @@ class ResolutionProver:
                 )
                 formula.connective = Connective.OR
         if formula.formulaType == Type.UNARY:
-            formula.inside = self.remove_arrows_recursively(formula.inside)
+            formula.inside = self.remove_arrows(formula.inside)
         return formula
 
     def move_negation_inward(self, formula: Expression, negation_outside: bool):
@@ -170,32 +174,36 @@ class ResolutionProver:
             elif negation_outside and formula.connective == Connective.OR:
                 formula.connective = Connective.AND
         if formula.formulaType == Type.UNARY:
-            formula_negated = formula.negation
-            if negation_outside and formula_negated:
-                formula.inside = self.move_negation_inward(formula.inside, False)
-            elif negation_outside or formula_negated:
+            if not negation_outside or not formula.negation:
+                # if previous negates results in a negation, we need to reverse quantifiers and pass the negation
                 if formula.quantifier == Quantifier.UNIVERSAL:
                     formula.quantifier = Quantifier.EXISTENTIAL
                 elif formula.quantifier == Quantifier.EXISTENTIAL:
                     formula.quantifier = Quantifier.UNIVERSAL
                 formula.inside = self.move_negation_inward(formula.inside, True)
             else:
+                # if previous negates results in no negation, we don't reverse quantifiers no negation passed
                 formula.inside = self.move_negation_inward(formula.inside, False)
 
         if (negation_outside
                 and formula.formulaType != Type.BINARY
                 and formula.formulaType != Type.UNARY):
+            # if formula is function, and there's a negation, wraps it in a unary with negation
             formula = Unary(formula, Quantifier.NONE, True, "")
         else:
+            # if formula is binary or unary, then we are returning to previous, don't add negation
             formula.negation = False
 
         return formula
+
+    def standardize_variables(self, formula: Expression):
+        pass
 
     def get_prenex(self):
         print("Executing Sub step 1. removing arrows")
         for formulas in self.arg:
             formula = formulas.pop()
-            new_formula = self.remove_arrows_recursively(formula)
+            new_formula = self.remove_arrows(formula)
             formulas.append(new_formula)
         self.print_argument()
 
@@ -209,6 +217,9 @@ class ResolutionProver:
                 new_formula = self.move_negation_inward(formula, False)
                 formulas.append(new_formula)
         self.print_argument()
+
+        print("Executing Sub step 3. standardize variables")
+
         print("")
 
     def get_most_common_var(self):
@@ -222,57 +233,66 @@ class ResolutionProver:
 
 
 def input_formula(formulaInput: [Expression]) -> [Expression]:
-    f = []
+    formula = []
+    var_count = {}
+
     for index, part in enumerate(formulaInput):
         if part == "->":
-            right = f.pop()
-            left = f.pop()
+            right = formula.pop()
+            left = formula.pop()
 
             binary = Binary(left, right, Connective.IMPLICATION)
-            f.append(binary)
+            formula.append(binary)
         if part == "<->":
-            right = f.pop()
-            left = f.pop()
+            right = formula.pop()
+            left = formula.pop()
 
             binary = Binary(left, right, Connective.BICONDITIONAL)
-            f.append(binary)
+            formula.append(binary)
         if part == "AND":
-            right = f.pop()
-            left = f.pop()
+            right = formula.pop()
+            left = formula.pop()
 
             binary = Binary(left, right, Connective.AND)
-            f.append(binary)
+            formula.append(binary)
         if part == "OR":
-            right = f.pop()
-            left = f.pop()
+            right = formula.pop()
+            left = formula.pop()
 
             binary = Binary(left, right, Connective.OR)
-            f.append(binary)
+            formula.append(binary)
         if part == "FORM":
             func_name = inputList[index + 1]
             var_name = inputList[index + 2]
 
+            if var_name in var_count:
+                var_count[var_name] += 1
+            else:
+                var_count[var_name] = 1
+
             variable = Variable(var_name)
             function = Function(func_name, variable)
-            f.append(function)
+            formula.append(function)
         if part == "NOT":
-            inside = f.pop()
+            inside = formula.pop()
 
             unary = Unary(inside, Quantifier.NONE, True, "")
-            f.append(unary)
+            formula.append(unary)
         if part == "FORALL":
-            inside = f.pop()
+            inside = formula.pop()
 
             unary = Unary(inside, Quantifier.UNIVERSAL, False, inputList[index + 1])
-            f.append(unary)
+            formula.append(unary)
         if part == "EXIST":
-            inside = f.pop()
+            inside = formula.pop()
 
             unary = Unary(inside, Quantifier.EXISTENTIAL, False, inputList[index + 1])
-            f.append(unary)
+            formula.append(unary)
         if part == "done":
             break
-    return f
+
+    formula[0].set_var_count(var_count)
+    return formula
 
 
 def input_commands(commandInput: [], args: [[Expression]]):
