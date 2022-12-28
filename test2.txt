@@ -1,3 +1,4 @@
 input FORM R y EXIST y FORM S y NOT FORALL y AND FORM Q y NOT EXIST y NOT -> FORALL x
+input FORM F x NOT FORALL x
 command print
 command resolve
