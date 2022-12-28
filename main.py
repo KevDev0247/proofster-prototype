@@ -122,6 +122,7 @@ class Function(Expression):
 class ResolutionProver:
     def __init__(self, arg: [Expression]):
         self.arg = arg
+        self.varCount = 0
         self.setOfSupport = []
 
     def print_argument(self):
@@ -200,21 +201,21 @@ class ResolutionProver:
 
         return formula
 
-    def standardize_variables(self, formula: Expression, var: str, varCount: int):
+    def standardize_variables(self, formula: Expression, var: str):
         if formula.formulaType == Type.UNARY:
-            if formula.quantifier != Quantifier.NONE:
-                varCount += 1
-                formula.quantVar = var + str(varCount)
-            formula.inside = self.standardize_variables(formula.inside, var, varCount)
+            if formula.quantVar == var and formula.quantifier != Quantifier.NONE:
+                self.varCount += 1
+                formula.quantVar = var + str(self.varCount)
+            formula.inside = self.standardize_variables(formula.inside, var)
         elif formula.formulaType == Type.BINARY:
-            formula.left = self.standardize_variables(formula.left, var, varCount)
-            formula.right = self.standardize_variables(formula.right, var, varCount)
+            formula.left = self.standardize_variables(formula.left, var)
+            formula.right = self.standardize_variables(formula.right, var)
         elif formula.formulaType == Type.FUNCTION:
-            if formula.variable.varName == var and varCount != 0:
-                formula.set(var + str(varCount))
+            if formula.variable.varName == var and self.varCount != 0:
+                formula.set(var + str(self.varCount))
         else:
             if formula.varName == var:
-                formula.set(var + str(varCount))
+                formula.set(var + str(self.varCount))
         return formula
 
     def get_prenex(self):
@@ -243,7 +244,8 @@ class ResolutionProver:
         for formulas in self.arg:
             formula = formulas[0]
             for var in formula.varList:
-                formulas[0] = self.standardize_variables(formula, var, 0)
+                self.varCount = 0
+                formulas[0] = self.standardize_variables(formula, var)
         self.print_argument()
         print("")
 
@@ -303,13 +305,21 @@ def input_formula(formulaInput: [Expression]) -> [Expression]:
             formula.append(unary)
         if part == "FORALL":
             inside = formula.pop()
+            var_name = inputList[index + 1]
 
-            unary = Unary(inside, Quantifier.UNIVERSAL, False, inputList[index + 1])
+            if var_name not in var_list:
+                var_list.append(var_name)
+
+            unary = Unary(inside, Quantifier.UNIVERSAL, False, var_name)
             formula.append(unary)
         if part == "EXIST":
             inside = formula.pop()
+            var_name = inputList[index + 1]
 
-            unary = Unary(inside, Quantifier.EXISTENTIAL, False, inputList[index + 1])
+            if var_name not in var_list:
+                var_list.append(var_name)
+
+            unary = Unary(inside, Quantifier.EXISTENTIAL, False, var_name)
             formula.append(unary)
         if part == "done":
             break
