@@ -161,16 +161,8 @@ class ResolutionProver:
         return formula
 
     def move_negation_inward(self, formula: Expression, negation_outside: bool):
-        print("before")
-        formula.print_expression()
-        if formula.formulaType == Type.UNARY:
-            print(" self ", formula.negation, "out ", negation_outside)
-        else:
-            print("")
         if formula.formulaType == Type.BINARY:
-            print("Binary", negation_outside)
             formula.left = self.move_negation_inward(formula.left, negation_outside)
-            print("Binary", negation_outside)
             formula.right = self.move_negation_inward(formula.right, negation_outside)
 
             if negation_outside and formula.connective == Connective.AND:
@@ -178,7 +170,6 @@ class ResolutionProver:
             elif negation_outside and formula.connective == Connective.OR:
                 formula.connective = Connective.AND
         if formula.formulaType == Type.UNARY:
-            print("Unary")
             formula_negated = formula.negation
             if negation_outside and formula_negated:
                 formula.inside = self.move_negation_inward(formula.inside, False)
@@ -197,23 +188,18 @@ class ResolutionProver:
             formula = Unary(formula, Quantifier.NONE, True, "")
         else:
             formula.negation = False
-        print("after")
-        formula.print_expression()
-        if formula.formulaType == Type.UNARY:
-            print(formula.negation)
-        else:
-            print("")
+
         return formula
 
     def get_prenex(self):
-        print("Sub step 1. removing arrows")
+        print("Executing Sub step 1. removing arrows")
         for formulas in self.arg:
             formula = formulas.pop()
             new_formula = self.remove_arrows_recursively(formula)
             formulas.append(new_formula)
         self.print_argument()
 
-        print("Sub step 2. moving negation inward")
+        print("Executing Sub step 2. moving negation inward")
         for formulas in self.arg:
             formula = formulas.pop()
             if formula.formulaType == Type.UNARY:
@@ -223,6 +209,7 @@ class ResolutionProver:
                 new_formula = self.move_negation_inward(formula, False)
                 formulas.append(new_formula)
         self.print_argument()
+        print("")
 
     def get_most_common_var(self):
         pass
@@ -303,13 +290,15 @@ def input_commands(commandInput: [], args: [[Expression]]):
 def apply_resolution(arg: [Expression]):
     resolver = ResolutionProver(arg)
 
-    print("Negate conclusion yield")
+    print("Executing Step 1. Negate conclusion")
     resolver.negate_conclusion()
+    print("Step 1 completed")
     resolver.print_argument()
     print("")
 
-    print("Turning arguments into ∃-free Prenex Normal Form yield")
+    print("Executing Step 2. Turning arguments into ∃-free Prenex Normal Form")
     resolver.get_prenex()
+    print("Step 2 completed")
     resolver.print_argument()
     print("")
 
