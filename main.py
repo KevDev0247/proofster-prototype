@@ -175,7 +175,10 @@ class ResolutionProver:
             elif negation_outside and formula.connective == Connective.OR:
                 formula.connective = Connective.AND
         if formula.formulaType == Type.UNARY:
-            if not negation_outside or not formula.negation:
+            if negation_outside and formula.negation:
+                # if previous negation cancels out, we don't reverse quantifiers no negation passed
+                formula.inside = self.move_negation_inward(formula.inside, False)
+            elif negation_outside or formula.negation:
                 # if previous negates results in a negation, we need to reverse quantifiers and pass the negation
                 if formula.quantifier == Quantifier.UNIVERSAL:
                     formula.quantifier = Quantifier.EXISTENTIAL
@@ -183,7 +186,7 @@ class ResolutionProver:
                     formula.quantifier = Quantifier.UNIVERSAL
                 formula.inside = self.move_negation_inward(formula.inside, True)
             else:
-                # if previous negates results in no negation, we don't reverse quantifiers no negation passed
+                # if no negation, we don't reverse quantifiers no negation passed
                 formula.inside = self.move_negation_inward(formula.inside, False)
 
         if (negation_outside
@@ -226,8 +229,12 @@ class ResolutionProver:
         for formulas in self.arg:
             formula = formulas.pop()
             if formula.formulaType == Type.UNARY:
-                new_formula = self.move_negation_inward(formula.inside, formula.negation)
+                new_formula = self.move_negation_inward(formula, formula.negation)
+                new_formula.quantifier = formula.quantifier
                 new_formula.set_var_list(formula.varList)
+                print("missing ")
+                new_formula.print_expression()
+                print("")
                 formulas.append(new_formula)
             if formula.formulaType == Type.BINARY:
                 new_formula = self.move_negation_inward(formula, False)
