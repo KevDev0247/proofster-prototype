@@ -26,7 +26,7 @@ class Type(Enum):
 class Expression(ABC):
     def __init__(self, formula_type: Type):
         self._formula_type = formula_type
-        self._exp_var_count = {}
+        self._var_count = {}
         self._quant_list = []
 
     @abstractmethod
@@ -43,6 +43,12 @@ class Expression(ABC):
 
     def get_formula_type(self):
         return self._formula_type
+
+    def get_var_count(self):
+        return self._var_count
+
+    def get_quant_list(self):
+        return self._quant_list
 
 
 class Binary(Expression):
@@ -71,7 +77,7 @@ class Binary(Expression):
         self.right.set(var)
 
     def set_var_count(self, var_count: {}):
-        self._exp_var_count = var_count
+        self._var_count = var_count
         self.left.set_var_count(var_count)
         self.right.set_var_count(var_count)
 
@@ -97,7 +103,7 @@ class Unary(Expression):
         self.inside.set(var)
 
     def set_var_count(self, var_count: {}):
-        self._exp_var_count = var_count
+        self._var_count = var_count
         self.inside.set_var_count(var_count)
 
 
@@ -113,7 +119,7 @@ class Variable(Expression):
         self.varName = var
 
     def set_var_count(self, var_count: {}):
-        self._exp_var_count = var_count
+        self._var_count = var_count
 
 
 class Function(Expression):
@@ -131,7 +137,7 @@ class Function(Expression):
         self.exp.set(var)
 
     def set_var_count(self, var_count: {}):
-        self._exp_var_count = var_count
+        self._var_count = var_count
         self.exp.set_var_count(var_count)
 
 
@@ -144,8 +150,9 @@ class ResolutionProver:
 
     def print_argument(self):
         for formulas in self.arg:
-            if len(formulas[0]._quant_list) > 0:
-                for item in formulas[0]._quant_list:
+            quant_list = formulas[0].get_quant_list()
+            if len(quant_list) > 0:
+                for item in quant_list:
                     if item[0] == Quantifier.EXISTENTIAL:
                         print("∃" + item[1], end="")
                     if item[0] == Quantifier.UNIVERSAL:
@@ -159,7 +166,7 @@ class ResolutionProver:
     def negate_conclusion(self):
         conclusion = self.arg.pop().pop()
         unary = Unary(conclusion, Quantifier.NONE, True, "")
-        unary.set_var_count(conclusion._exp_var_count)
+        unary.set_var_count(conclusion.get_var_count())
         self.arg.append([unary])
 
     def check_resolvable(self):
@@ -266,8 +273,8 @@ class ResolutionProver:
             formula.right = self.skolemize(formula.right, data)
         elif formula_type == Type.UNARY:
             formula.inside = self.skolemize(formula.inside, data)
-        elif formula._formula_type == Type.FUNCTION:
-            if formula.exp._formula_type != Type.VARIABLE:
+        elif formula_type == Type.FUNCTION:
+            if formula.exp.get_formula_type() != Type.VARIABLE:
                 formula.exp = self.skolemize(formula.exp, data)
             else:
                 prev_var = data[1]
@@ -295,14 +302,16 @@ class ResolutionProver:
         print("Sub step 2. moving negation inward")
         for formulas in self.arg:
             formula = formulas.pop()
-            if formula._formula_type == Type.UNARY:
+            formula_type = formula.get_formula_type()
+            var_count = formula.get_var_count()
+            if formula_type == Type.UNARY:
                 newFormula = self.move_negation_inward(formula, False)
                 newFormula.quantifier = formula.quantifier
-                newFormula.set_var_count(formula._exp_var_count)
+                newFormula.set_var_count(var_count)
                 formulas.append(newFormula)
-            if formula._formula_type == Type.BINARY:
+            if formula_type == Type.BINARY:
                 newFormula = self.move_negation_inward(formula, False)
-                newFormula.set_var_count(formula._exp_var_count)
+                newFormula.set_var_count(var_count)
                 formulas.append(newFormula)
         self.print_argument()
         print("")
@@ -310,7 +319,8 @@ class ResolutionProver:
         print("Sub step 3. standardize variables")
         for formulas in self.arg:
             formula = formulas[0]
-            for var in formula._exp_var_count:
+            var_count = formula.get_var_count()
+            for var in var_count:
                 self.currVarCount = 0
                 formulas[0] = self.standardize_variables(formula, var)
         self.print_argument()
@@ -463,7 +473,7 @@ def apply_resolution(arg: [Expression]):
 
 
 argument = []
-for line in fileinput.input(files='test1.txt'):
+for line in fileinput.input(files='test2.txt'):
     input_list = line.split()
     label = input_list[0]
     input_list.pop(0)
