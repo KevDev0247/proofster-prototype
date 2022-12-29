@@ -26,7 +26,7 @@ class Type(Enum):
 class Expression(ABC):
     def __init__(self, formulaType: Type):
         self.formulaType = formulaType
-        self.varList = {}
+        self.expVarCount = {}
         self.quantList = []
 
     @abstractmethod
@@ -37,8 +37,8 @@ class Expression(ABC):
     def set(self, var: str):
         pass
 
-    def set_var_list(self, varList: {}):
-        self.varList = varList
+    def set_var_list(self, expVarCount: {}):
+        self.expVarCount = expVarCount
 
 
 class Binary(Expression):
@@ -140,7 +140,7 @@ class ResolutionProver:
     def negate_conclusion(self):
         conclusion = self.arg.pop().pop()
         unary = Unary(conclusion, Quantifier.NONE, True, "")
-        unary.set_var_list(conclusion.varList)
+        unary.set_var_list(conclusion.expVarCount)
         self.arg.append([unary])
 
     def check_resolvable(self):
@@ -258,11 +258,11 @@ class ResolutionProver:
             if formula.formulaType == Type.UNARY:
                 newFormula = self.move_negation_inward(formula, False)
                 newFormula.quantifier = formula.quantifier
-                newFormula.set_var_list(formula.varList)
+                newFormula.set_var_list(formula.expVarCount)
                 formulas.append(newFormula)
             if formula.formulaType == Type.BINARY:
                 newFormula = self.move_negation_inward(formula, False)
-                newFormula.set_var_list(formula.varList)
+                newFormula.set_var_list(formula.expVarCount)
                 formulas.append(newFormula)
         self.print_argument()
         print("")
@@ -270,7 +270,7 @@ class ResolutionProver:
         print("Sub step 3. standardize variables")
         for formulas in self.arg:
             formula = formulas[0]
-            for var in formula.varList:
+            for var in formula.expVarCount:
                 self.currVarCount = 0
                 formulas[0] = self.standardize_variables(formula, var)
         self.print_argument()
@@ -283,6 +283,7 @@ class ResolutionProver:
         self.print_argument()
         print("")
 
+        print("Sub step 5. Skolemize the formula")
         for formulaHolder in self.arg:
             toDrop = []
             formula = formulaHolder[0]
@@ -290,6 +291,9 @@ class ResolutionProver:
                 if (quantHolder[0] == Quantifier.EXISTENTIAL
                         and quantHolder[1] not in formula.quantList):
                     toDrop.append(quantHolder[1])
+            formulaHolder[0] = self.skolemize(formula, toDrop)
+        self.print_argument()
+        print("")
 
     def get_most_common_var(self):
         pass
@@ -303,7 +307,7 @@ class ResolutionProver:
 
 def input_formula(formulaInput: [Expression]) -> [Expression]:
     formula = []
-    var_list = []
+    var_list = {}
 
     for index, part in enumerate(formulaInput):
         if part == "->":
@@ -335,7 +339,9 @@ def input_formula(formulaInput: [Expression]) -> [Expression]:
             var_name = inputList[index + 2]
 
             if var_name not in var_list:
-                var_list.append(var_name)
+                var_list[var_name] = 1
+            else:
+                var_list[var_name] += 1
 
             variable = Variable(var_name)
             function = Function(func_name, variable)
@@ -350,7 +356,7 @@ def input_formula(formulaInput: [Expression]) -> [Expression]:
             var_name = inputList[index + 1]
 
             if var_name not in var_list:
-                var_list.append(var_name)
+                var_list[var_name] = 1
 
             unary = Unary(inside, Quantifier.UNIVERSAL, False, var_name)
             formula.append(unary)
@@ -359,7 +365,7 @@ def input_formula(formulaInput: [Expression]) -> [Expression]:
             var_name = inputList[index + 1]
 
             if var_name not in var_list:
-                var_list.append(var_name)
+                var_list[var_name] = 1
 
             unary = Unary(inside, Quantifier.EXISTENTIAL, False, var_name)
             formula.append(unary)
