@@ -27,6 +27,7 @@ class Expression(ABC):
     def __init__(self, formulaType: Type):
         self.formulaType = formulaType
         self.varList = []
+        self.quantList = []
 
     @abstractmethod
     def print_expression(self):
@@ -127,6 +128,12 @@ class ResolutionProver:
 
     def print_argument(self):
         for formulas in self.arg:
+            if len(formulas[0].quantList) > 0:
+                for item in formulas[0].quantList:
+                    if item[0] == Quantifier.EXISTENTIAL:
+                        print("∃" + item[1], end="")
+                    if item[0] == Quantifier.UNIVERSAL:
+                        print("∀" + item[1], end="")
             formulas[0].print_expression()
             print("")
 
@@ -218,6 +225,17 @@ class ResolutionProver:
                 formula.set(var + str(self.varCount))
         return formula
 
+    def move_quantifiers_to_front(self, formula: Expression, quantList: []):
+        if formula.formulaType == Type.BINARY:
+            quantList = self.move_quantifiers_to_front(formula.left, quantList)
+            quantList = self.move_quantifiers_to_front(formula.right, quantList)
+        elif formula.formulaType == Type.UNARY:
+            if formula.quantifier != Quantifier.NONE:
+                quantList.append((formula.quantifier, formula.quantVar))
+                formula.quantifier = Quantifier.NONE
+            quantList = self.move_quantifiers_to_front(formula.inside, quantList)
+        return quantList
+
     def get_prenex(self):
         print("Executing Sub step 1. removing arrows")
         for formulas in self.arg:
@@ -246,6 +264,13 @@ class ResolutionProver:
             for var in formula.varList:
                 self.varCount = 0
                 formulas[0] = self.standardize_variables(formula, var)
+        self.print_argument()
+        print("")
+
+        print("Executing Sub step 4. move all quantifiers in front")
+        for formulas in self.arg:
+            formula = formulas[0]
+            formula.quantList = self.move_quantifiers_to_front(formula, [])
         self.print_argument()
         print("")
 
