@@ -106,18 +106,18 @@ class Variable(Expression):
 
 
 class Function(Expression):
-    def __init__(self, name: str, var: Variable):
+    def __init__(self, name: str, exp: Expression):
         super().__init__(Type.FUNCTION)
         self.name = name
-        self.variable = var
+        self.exp = exp
 
     def print_expression(self):
         print(self.name + "(", end="")
-        self.variable.print_expression()
+        self.exp.print_expression()
         print(")", end="")
 
     def set(self, var):
-        self.variable.set(var)
+        self.exp.set(var)
 
 
 class ResolutionProver:
@@ -218,7 +218,7 @@ class ResolutionProver:
             formula.left = self.standardize_variables(formula.left, var)
             formula.right = self.standardize_variables(formula.right, var)
         elif formula.formulaType == Type.FUNCTION:
-            if formula.variable.varName == var and self.varCount != 0:
+            if formula.exp.varName == var and self.varCount != 0:
                 formula.set(var + str(self.varCount))
         else:
             if formula.varName == var:
@@ -236,15 +236,19 @@ class ResolutionProver:
             quantList = self.move_quantifiers_to_front(formula.inside, quantList)
         return quantList
 
+    def skolemize(self, formula: Expression, toDrop: []):
+        pass
+
     def get_prenex(self):
-        print("Executing Sub step 1. removing arrows")
+        print("Sub step 1. removing arrows")
         for formulas in self.arg:
             formula = formulas.pop()
             new_formula = self.remove_arrows(formula)
             formulas.append(new_formula)
         self.print_argument()
+        print("")
 
-        print("Executing Sub step 2. moving negation inward")
+        print("Sub step 2. moving negation inward")
         for formulas in self.arg:
             formula = formulas.pop()
             if formula.formulaType == Type.UNARY:
@@ -257,8 +261,9 @@ class ResolutionProver:
                 new_formula.set_var_list(formula.varList)
                 formulas.append(new_formula)
         self.print_argument()
+        print("")
 
-        print("Executing Sub step 3. standardize variables")
+        print("Sub step 3. standardize variables")
         for formulas in self.arg:
             formula = formulas[0]
             for var in formula.varList:
@@ -267,7 +272,7 @@ class ResolutionProver:
         self.print_argument()
         print("")
 
-        print("Executing Sub step 4. move all quantifiers in front")
+        print("Sub step 4. moving all quantifiers to front")
         for formulas in self.arg:
             formula = formulas[0]
             formula.quantList = self.move_quantifiers_to_front(formula, [])
