@@ -323,12 +323,13 @@ class ResolutionProver:
             for index, quantHolder in enumerate(formula.quantList.copy()):
                 quantifier = quantHolder[0]
                 quant_var = quantHolder[1]
+                if len(formula.quantList) > 1:
+                    prev_var = formula.quantList[index - 1][1]
+                else:
+                    prev_var = ""
                 if (quantifier == Quantifier.EXISTENTIAL
                         and quant_var not in formula.quantList):
-                    if index > 1:
-                        prev_var = formula.quantList[index - 1][1]
-                    else:
-                        prev_var = ""
+
                     drop_list.append((quant_var, prev_var))
                     formula.quantList.pop(index)
             for to_drop in drop_list:
