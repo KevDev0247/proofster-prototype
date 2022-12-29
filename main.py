@@ -276,7 +276,7 @@ class ResolutionProver:
         elif formula_type == Type.FUNCTION:
             if formula.exp.get_formula_type() != Type.VARIABLE:
                 formula.exp = self.skolemize(formula.exp, data)
-            else:
+            elif formula.exp.varName == data[0]:
                 prev_var = data[1]
                 if prev_var == "":
                     # if there's no quantifiers
@@ -346,7 +346,6 @@ class ResolutionProver:
                     prev_var = ""
                 if (quantifier == Quantifier.EXISTENTIAL
                         and quant_var not in formula._quant_list):
-
                     drop_list.append((quant_var, prev_var))
                     formula._quant_list.pop(index)
             for to_drop in drop_list:
@@ -473,7 +472,7 @@ def apply_resolution(arg: [Expression]):
 
 
 argument = []
-for line in fileinput.input(files='test2.txt'):
+for line in fileinput.input(files='test1.txt'):
     input_list = line.split()
     label = input_list[0]
     input_list.pop(0)
