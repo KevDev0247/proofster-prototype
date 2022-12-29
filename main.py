@@ -34,7 +34,7 @@ class Expression(ABC):
         pass
 
     @abstractmethod
-    def set(self, var: str):
+    def set_var(self, var: str):
         pass
 
     @abstractmethod
@@ -72,14 +72,32 @@ class Binary(Expression):
         self._right.print_expression()
         print(")", end="")
 
-    def set(self, var: str):
-        self._left.set(var)
-        self._right.set(var)
+    def get_left(self):
+        return self._left
+
+    def get_right(self):
+        return self._right
+
+    def get_connective(self):
+        return self._connective
+
+    def set_var(self, var: str):
+        self._left.set_var(var)
+        self._right.set_var(var)
 
     def set_var_count(self, var_count: {}):
         self._var_count = var_count
         self._left.set_var_count(var_count)
         self._right.set_var_count(var_count)
+
+    def set_left(self, left: Expression):
+        self._left = left
+
+    def set_connective(self, connective: Connective):
+        self._connective = connective
+
+    def set_right(self, right: Expression):
+        self._right = right
 
 
 class Unary(Expression):
@@ -99,8 +117,8 @@ class Unary(Expression):
             print("∀" + self._quant_var, end="")
         self._inside.print_expression()
 
-    def set(self, var: str):
-        self._inside.set(var)
+    def set_var(self, var: str):
+        self._inside.set_var(var)
 
     def set_var_count(self, var_count: {}):
         self._var_count = var_count
@@ -115,7 +133,7 @@ class Variable(Expression):
     def print_expression(self):
         print(self._var_name, end="")
 
-    def set(self, var_name):
+    def set_var(self, var_name):
         self._var_name = var_name
 
     def set_var_count(self, var_count: {}):
@@ -133,8 +151,8 @@ class Function(Expression):
         self._inside.print_expression()
         print(")", end="")
 
-    def set(self, var):
-        self._inside.set(var)
+    def set_var(self, var):
+        self._inside.set_var(var)
 
     def set_var_count(self, var_count: {}):
         self._var_count = var_count
@@ -178,24 +196,33 @@ class ResolutionProver:
     def remove_arrows(self, formula: Expression):
         formula_type = formula.get_formula_type()
         if formula_type == Type.BINARY:
-            new_left = self.remove_arrows(formula._left)
-            new_right = self.remove_arrows(formula._right)
-            if formula._connective == Connective.IMPLICATION:
-                formula._left = Unary(new_left, Quantifier.NONE, True, "")
-                formula._right = new_right
-                formula._connective = Connective.OR
-            if formula._connective == Connective.BICONDITIONAL:
-                formula._left = Binary(
-                    new_left,
-                    new_right,
-                    Connective.AND
+            new_left = self.remove_arrows(formula.get_left())
+            new_right = self.remove_arrows(formula.get_right())
+
+            if formula.get_connective() == Connective.IMPLICATION:
+                formula.set_left(
+                    Unary(new_left, Quantifier.NONE, True, "")
                 )
-                formula._right = Binary(
-                    Unary(new_left, Quantifier.NONE, True, ""),
-                    Unary(new_right, Quantifier.NONE, True, ""),
-                    Connective.AND
+                formula.set_right(new_right)
+                formula.set_connective(Connective.OR)
+
+            if formula.get_connective() == Connective.BICONDITIONAL:
+                formula.set_left(
+                    Binary(
+                        new_left,
+                        new_right,
+                        Connective.AND
+                    )
                 )
-                formula._connective = Connective.OR
+                formula.set_right(
+                    Binary(
+                        Unary(new_left, Quantifier.NONE, True, ""),
+                        Unary(new_right, Quantifier.NONE, True, ""),
+                        Connective.AND
+                    )
+                )
+                formula.set_connective(Connective.OR)
+
         if formula_type == Type.UNARY:
             formula._inside = self.remove_arrows(formula._inside)
         return formula
@@ -203,13 +230,24 @@ class ResolutionProver:
     def move_negation_inward(self, formula: Expression, negation_outside: bool):
         formula_type = formula.get_formula_type()
         if formula_type == Type.BINARY:
-            formula._left = self.move_negation_inward(formula._left, negation_outside)
-            formula._right = self.move_negation_inward(formula._right, negation_outside)
+            formula.set_left(
+                self.move_negation_inward(
+                    formula.get_left(),
+                    negation_outside
+                )
+            )
+            formula.set_right(
+                self.move_negation_inward(
+                    formula.get_right(),
+                    negation_outside
+                )
+            )
 
-            if negation_outside and formula._connective == Connective.AND:
-                formula._connective = Connective.OR
-            elif negation_outside and formula._connective == Connective.OR:
-                formula._connective = Connective.AND
+            if negation_outside and formula.get_connective() == Connective.AND:
+                formula.set_connective(Connective.OR)
+            elif negation_outside and formula.get_connective() == Connective.OR:
+                formula.set_connective(Connective.AND)
+
         if formula_type == Type.UNARY:
             if negation_outside and formula._negation:
                 # if previous negation cancels out, we don't reverse quantifiers no negation passed
@@ -244,33 +282,49 @@ class ResolutionProver:
                 formula._quant_var = var_name + str(self._subscript)
             formula._inside = self.standardize_variables(formula._inside, var_name)
         elif formula_type == Type.BINARY:
-            formula._left = self.standardize_variables(formula._left, var_name)
-            formula._right = self.standardize_variables(formula._right, var_name)
+            formula.set_left(
+                self.standardize_variables(
+                    formula.get_left(),
+                    var_name
+                )
+            )
+            formula.set_right(
+                self.standardize_variables(
+                    formula.get_right(),
+                    var_name
+                )
+            )
         elif formula_type == Type.FUNCTION:
             if formula._inside._var_name == var_name and self._subscript != 0:
-                formula.set(var_name + str(self._subscript))
+                formula.set_var(var_name + str(self._subscript))
         else:
             if formula._var_name == var_name:
-                formula.set(var_name + str(self._subscript))
+                formula.set_var(var_name + str(self._subscript))
         return formula
 
-    def move_quantifiers_to_front(self, formula: Expression, quantList: []):
+    def move_quantifiers_to_front(self, formula: Expression, quant_list: []):
         formula_type = formula.get_formula_type()
         if formula_type == Type.BINARY:
-            quantList = self.move_quantifiers_to_front(formula._left, quantList)
-            quantList = self.move_quantifiers_to_front(formula._right, quantList)
+            quant_list = self.move_quantifiers_to_front(formula.get_left(), quant_list)
+            quant_list = self.move_quantifiers_to_front(formula.get_right(), quant_list)
         elif formula_type == Type.UNARY:
             if formula._quantifier != Quantifier.NONE:
-                quantList.append((formula._quantifier, formula._quant_var))
+                quant_list.append(
+                    (formula._quantifier, formula._quant_var)
+                )
                 formula._quantifier = Quantifier.NONE
-            quantList = self.move_quantifiers_to_front(formula._inside, quantList)
-        return quantList
+            quant_list = self.move_quantifiers_to_front(formula._inside, quant_list)
+        return quant_list
 
     def skolemize(self, formula: Expression, data: tuple[str, str]):
         formula_type = formula.get_formula_type()
         if formula_type == Type.BINARY:
-            formula._left = self.skolemize(formula._left, data)
-            formula._right = self.skolemize(formula._right, data)
+            formula.set_left(
+                self.skolemize(formula.get_left(), data)
+            )
+            formula.set_right(
+                self.skolemize(formula.get_right(), data)
+            )
         elif formula_type == Type.UNARY:
             formula._inside = self.skolemize(formula._inside, data)
         elif formula_type == Type.FUNCTION:
