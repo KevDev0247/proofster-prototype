@@ -26,7 +26,7 @@ class Type(Enum):
 class Expression(ABC):
     def __init__(self, formulaType: Type):
         self.formulaType = formulaType
-        self.varList = []
+        self.varList = {}
         self.quantList = []
 
     @abstractmethod
@@ -37,7 +37,7 @@ class Expression(ABC):
     def set(self, var: str):
         pass
 
-    def set_var_list(self, varList: []):
+    def set_var_list(self, varList: {}):
         self.varList = varList
 
 
@@ -123,7 +123,7 @@ class Function(Expression):
 class ResolutionProver:
     def __init__(self, arg: [Expression]):
         self.arg = arg
-        self.varCount = 0
+        self.currVarCount = 0
         self.setOfSupport = []
 
     def print_argument(self):
@@ -211,18 +211,18 @@ class ResolutionProver:
     def standardize_variables(self, formula: Expression, var: str):
         if formula.formulaType == Type.UNARY:
             if formula.quantVar == var and formula.quantifier != Quantifier.NONE:
-                self.varCount += 1
-                formula.quantVar = var + str(self.varCount)
+                self.currVarCount += 1
+                formula.quantVar = var + str(self.currVarCount)
             formula.inside = self.standardize_variables(formula.inside, var)
         elif formula.formulaType == Type.BINARY:
             formula.left = self.standardize_variables(formula.left, var)
             formula.right = self.standardize_variables(formula.right, var)
         elif formula.formulaType == Type.FUNCTION:
-            if formula.exp.varName == var and self.varCount != 0:
-                formula.set(var + str(self.varCount))
+            if formula.exp.varName == var and self.currVarCount != 0:
+                formula.set(var + str(self.currVarCount))
         else:
             if formula.varName == var:
-                formula.set(var + str(self.varCount))
+                formula.set(var + str(self.currVarCount))
         return formula
 
     def move_quantifiers_to_front(self, formula: Expression, quantList: []):
@@ -237,14 +237,18 @@ class ResolutionProver:
         return quantList
 
     def skolemize(self, formula: Expression, toDrop: []):
-        pass
+        if formula.formulaType == Type.BINARY:
+            pass
+        elif formula.formulaType == Type.UNARY:
+            pass
+        return formula
 
     def get_prenex(self):
         print("Sub step 1. removing arrows")
         for formulas in self.arg:
             formula = formulas.pop()
-            new_formula = self.remove_arrows(formula)
-            formulas.append(new_formula)
+            newFormula = self.remove_arrows(formula)
+            formulas.append(newFormula)
         self.print_argument()
         print("")
 
@@ -252,14 +256,14 @@ class ResolutionProver:
         for formulas in self.arg:
             formula = formulas.pop()
             if formula.formulaType == Type.UNARY:
-                new_formula = self.move_negation_inward(formula, False)
-                new_formula.quantifier = formula.quantifier
-                new_formula.set_var_list(formula.varList)
-                formulas.append(new_formula)
+                newFormula = self.move_negation_inward(formula, False)
+                newFormula.quantifier = formula.quantifier
+                newFormula.set_var_list(formula.varList)
+                formulas.append(newFormula)
             if formula.formulaType == Type.BINARY:
-                new_formula = self.move_negation_inward(formula, False)
-                new_formula.set_var_list(formula.varList)
-                formulas.append(new_formula)
+                newFormula = self.move_negation_inward(formula, False)
+                newFormula.set_var_list(formula.varList)
+                formulas.append(newFormula)
         self.print_argument()
         print("")
 
@@ -267,7 +271,7 @@ class ResolutionProver:
         for formulas in self.arg:
             formula = formulas[0]
             for var in formula.varList:
-                self.varCount = 0
+                self.currVarCount = 0
                 formulas[0] = self.standardize_variables(formula, var)
         self.print_argument()
         print("")
@@ -278,6 +282,14 @@ class ResolutionProver:
             formula.quantList = self.move_quantifiers_to_front(formula, [])
         self.print_argument()
         print("")
+
+        for formulaHolder in self.arg:
+            toDrop = []
+            formula = formulaHolder[0]
+            for quantHolder in formula.quantList:
+                if (quantHolder[0] == Quantifier.EXISTENTIAL
+                        and quantHolder[1] not in formula.quantList):
+                    toDrop.append(quantHolder[1])
 
     def get_most_common_var(self):
         pass
