@@ -419,8 +419,8 @@ class ResolutionProver:
         print("Sub step 1. removing arrows")
         for formula_holder in self._arg:
             formula = formula_holder.pop()
-            newFormula = self.remove_arrows(formula)
-            formula_holder.append(newFormula)
+            new_formula = self.remove_arrows(formula)
+            formula_holder.append(new_formula)
 
         self.print_argument()
         print("")
@@ -432,37 +432,39 @@ class ResolutionProver:
             var_count = formula.get_var_count()
 
             if formula_type == Type.UNARY:
-                newFormula = self.move_negation_inward(formula, False)
-                newFormula.set_quantifier(formula.get_quantifier())
-                newFormula.set_var_count(var_count)
-                formula_holder.append(newFormula)
+                new_formula = self.move_negation_inward(formula, False)
+                new_formula.set_quantifier(formula.get_quantifier())
+                new_formula.set_var_count(var_count)
+                formula_holder.append(new_formula)
 
             if formula_type == Type.BINARY:
-                newFormula = self.move_negation_inward(formula, False)
-                newFormula.set_var_count(var_count)
-                formula_holder.append(newFormula)
+                new_formula = self.move_negation_inward(formula, False)
+                new_formula.set_var_count(var_count)
+                formula_holder.append(new_formula)
 
         self.print_argument()
         print("")
 
         print("Sub step 3. standardize variables")
         for formula_holder in self._arg:
-            formula = formula_holder[0]
+            formula = formula_holder.pop()
             var_count = formula.get_var_count()
 
             for var in var_count:
                 self._subscript = 0
-                formula_holder[0] = self.standardize_variables(formula, var)
+                new_formula = self.standardize_variables(formula, var)
+                formula_holder.append(new_formula)
 
         self.print_argument()
         print("")
 
         print("Sub step 4. moving all quantifiers to front")
         for formula_holder in self._arg:
-            formula = formula_holder[0]
+            formula = formula_holder.pop()
             formula.set_quant_list(
                 self.move_quantifiers_to_front(formula, [])
             )
+            formula_holder.append(formula)
 
         self.print_argument()
         print("")
@@ -470,7 +472,7 @@ class ResolutionProver:
         print("Sub step 5. Skolemize the formula")
         for formula_holder in self._arg:
             drop_list = []
-            formula = formula_holder[0]
+            formula = formula_holder.pop()
 
             quant_list = formula.get_quant_list()
             for index, quant_holder in enumerate(quant_list.copy()):
@@ -487,7 +489,8 @@ class ResolutionProver:
                     formula.set_quant_list(quant_list)
 
             for to_drop in drop_list:
-                formula_holder[0] = self.skolemize(formula, to_drop)
+                new_formula = self.skolemize(formula, to_drop)
+                formula_holder.append(new_formula)
 
         self.print_argument()
         print("")
@@ -503,36 +506,36 @@ class ResolutionProver:
 
 
 def input_formula(formulaInput: [Formula]) -> [Formula]:
-    formula = []
+    formula_holder = []
     var_count = {}
 
     for index, part in enumerate(formulaInput):
         if part == "->":
-            right = formula.pop()
-            left = formula.pop()
+            right = formula_holder.pop()
+            left = formula_holder.pop()
 
-            formula.append(
+            formula_holder.append(
                 Binary(left, right, Connective.IMPLICATION)
             )
         if part == "<->":
-            right = formula.pop()
-            left = formula.pop()
+            right = formula_holder.pop()
+            left = formula_holder.pop()
 
-            formula.append(
+            formula_holder.append(
                 Binary(left, right, Connective.BICONDITIONAL)
             )
         if part == "AND":
-            right = formula.pop()
-            left = formula.pop()
+            right = formula_holder.pop()
+            left = formula_holder.pop()
 
-            formula.append(
+            formula_holder.append(
                 Binary(left, right, Connective.AND)
             )
         if part == "OR":
-            right = formula.pop()
-            left = formula.pop()
+            right = formula_holder.pop()
+            left = formula_holder.pop()
 
-            formula.append(
+            formula_holder.append(
                 Binary(left, right, Connective.OR)
             )
         if part == "FORM":
@@ -544,40 +547,40 @@ def input_formula(formulaInput: [Formula]) -> [Formula]:
             else:
                 var_count[var_name] += 1
 
-            formula.append(
+            formula_holder.append(
                 Function(func_name, Variable(var_name))
             )
         if part == "NOT":
-            inside = formula.pop()
+            inside = formula_holder.pop()
 
-            formula.append(
+            formula_holder.append(
                 Unary(inside, Quantifier.NONE, True, "")
             )
         if part == "FORALL":
-            inside = formula.pop()
+            inside = formula_holder.pop()
             var_name = input_list[index + 1]
 
             if var_name not in var_count:
                 var_count[var_name] = 1
 
-            formula.append(
+            formula_holder.append(
                 Unary(inside, Quantifier.UNIVERSAL, False, var_name)
             )
         if part == "EXIST":
-            inside = formula.pop()
+            inside = formula_holder.pop()
             var_name = input_list[index + 1]
 
             if var_name not in var_count:
                 var_count[var_name] = 1
 
-            formula.append(
+            formula_holder.append(
                 Unary(inside, Quantifier.EXISTENTIAL, False, var_name)
             )
         if part == "done":
             break
 
-    formula[0].set_var_count(var_count)
-    return formula
+    formula_holder[0].set_var_count(var_count)
+    return formula_holder
 
 
 def input_commands(command_input: [], args: [[Formula]]):
@@ -615,7 +618,7 @@ def apply_resolution(arg: [Formula]):
 
 
 argument = []
-for line in fileinput.input(files='test1.txt'):
+for line in fileinput.input(files='test2.txt'):
     input_list = line.split()
     label = input_list[0]
     input_list.pop(0)
