@@ -37,8 +37,9 @@ class Expression(ABC):
     def set(self, var: str):
         pass
 
-    def set_var_list(self, expVarCount: {}):
-        self.expVarCount = expVarCount
+    @abstractmethod
+    def set_var_count(self, expVarCount: {}):
+        pass
 
 
 class Binary(Expression):
@@ -68,6 +69,11 @@ class Binary(Expression):
         self.right.set(var)
         self.valueSet = True
 
+    def set_var_count(self, var_count: {}):
+        self.expVarCount = var_count
+        self.left.set_var_count(var_count)
+        self.right.set_var_count(var_count)
+
 
 class Unary(Expression):
     def __init__(self, exp: Expression, quant: Quantifier, neg: bool, var: str):
@@ -91,6 +97,10 @@ class Unary(Expression):
         self.inside.set(var)
         self.valueSet = True
 
+    def set_var_count(self, var_count: {}):
+        self.expVarCount = var_count
+        self.inside.set_var_count(var_count)
+
 
 class Variable(Expression):
     def __init__(self, var):
@@ -103,6 +113,9 @@ class Variable(Expression):
 
     def set(self, var):
         self.varName = var
+
+    def set_var_count(self, var_count: {}):
+        self.expVarCount = var_count
 
 
 class Function(Expression):
@@ -118,6 +131,10 @@ class Function(Expression):
 
     def set(self, var):
         self.exp.set(var)
+
+    def set_var_count(self, var_count: {}):
+        self.expVarCount = var_count
+        self.exp.set_var_count(var_count)
 
 
 class ResolutionProver:
@@ -140,7 +157,7 @@ class ResolutionProver:
     def negate_conclusion(self):
         conclusion = self.arg.pop().pop()
         unary = Unary(conclusion, Quantifier.NONE, True, "")
-        unary.set_var_list(conclusion.expVarCount)
+        unary.set_var_count(conclusion.expVarCount)
         self.arg.append([unary])
 
     def check_resolvable(self):
@@ -236,11 +253,27 @@ class ResolutionProver:
             quantList = self.move_quantifiers_to_front(formula.inside, quantList)
         return quantList
 
-    def skolemize(self, formula: Expression, toDrop: []):
+    def skolemize(self, formula: Expression, data: tuple[str, str]):
         if formula.formulaType == Type.BINARY:
-            pass
+            formula.left = self.skolemize(formula.left, data)
+            formula.right = self.skolemize(formula.right, data)
         elif formula.formulaType == Type.UNARY:
-            pass
+            formula.inside = self.skolemize(formula.inside, data)
+        elif formula.formulaType == Type.FUNCTION:
+            if formula.exp.formulaType != Type.VARIABLE:
+                formula.exp = self.skolemize(formula.exp, data)
+            else:
+                prev_var = data[1]
+                if prev_var == "":
+                    # if there's no quantifiers
+                    variable = Variable("u")
+                    formula.exp = variable
+                else:
+                    # if there's quantifiers outside
+                    variable = Variable(prev_var)
+                    if formula.exp.varName != prev_var:
+                        function = Function("f", variable)
+                        formula.exp = function
         return formula
 
     def get_prenex(self):
@@ -258,11 +291,11 @@ class ResolutionProver:
             if formula.formulaType == Type.UNARY:
                 newFormula = self.move_negation_inward(formula, False)
                 newFormula.quantifier = formula.quantifier
-                newFormula.set_var_list(formula.expVarCount)
+                newFormula.set_var_count(formula.expVarCount)
                 formulas.append(newFormula)
             if formula.formulaType == Type.BINARY:
                 newFormula = self.move_negation_inward(formula, False)
-                newFormula.set_var_list(formula.expVarCount)
+                newFormula.set_var_count(formula.expVarCount)
                 formulas.append(newFormula)
         self.print_argument()
         print("")
@@ -285,13 +318,21 @@ class ResolutionProver:
 
         print("Sub step 5. Skolemize the formula")
         for formulaHolder in self.arg:
-            toDrop = []
+            drop_list = []
             formula = formulaHolder[0]
-            for quantHolder in formula.quantList:
-                if (quantHolder[0] == Quantifier.EXISTENTIAL
-                        and quantHolder[1] not in formula.quantList):
-                    toDrop.append(quantHolder[1])
-            formulaHolder[0] = self.skolemize(formula, toDrop)
+            for index, quantHolder in enumerate(formula.quantList.copy()):
+                quantifier = quantHolder[0]
+                quant_var = quantHolder[1]
+                if (quantifier == Quantifier.EXISTENTIAL
+                        and quant_var not in formula.quantList):
+                    if index > 1:
+                        prev_var = formula.quantList[index - 1][1]
+                    else:
+                        prev_var = ""
+                    drop_list.append((quant_var, prev_var))
+                    formula.quantList.pop(index)
+            for to_drop in drop_list:
+                formulaHolder[0] = self.skolemize(formula, to_drop)
         self.print_argument()
         print("")
 
@@ -307,7 +348,7 @@ class ResolutionProver:
 
 def input_formula(formulaInput: [Expression]) -> [Expression]:
     formula = []
-    var_list = {}
+    var_count = {}
 
     for index, part in enumerate(formulaInput):
         if part == "->":
@@ -338,10 +379,10 @@ def input_formula(formulaInput: [Expression]) -> [Expression]:
             func_name = inputList[index + 1]
             var_name = inputList[index + 2]
 
-            if var_name not in var_list:
-                var_list[var_name] = 1
+            if var_name not in var_count:
+                var_count[var_name] = 1
             else:
-                var_list[var_name] += 1
+                var_count[var_name] += 1
 
             variable = Variable(var_name)
             function = Function(func_name, variable)
@@ -355,8 +396,8 @@ def input_formula(formulaInput: [Expression]) -> [Expression]:
             inside = formula.pop()
             var_name = inputList[index + 1]
 
-            if var_name not in var_list:
-                var_list[var_name] = 1
+            if var_name not in var_count:
+                var_count[var_name] = 1
 
             unary = Unary(inside, Quantifier.UNIVERSAL, False, var_name)
             formula.append(unary)
@@ -364,15 +405,15 @@ def input_formula(formulaInput: [Expression]) -> [Expression]:
             inside = formula.pop()
             var_name = inputList[index + 1]
 
-            if var_name not in var_list:
-                var_list[var_name] = 1
+            if var_name not in var_count:
+                var_count[var_name] = 1
 
             unary = Unary(inside, Quantifier.EXISTENTIAL, False, var_name)
             formula.append(unary)
         if part == "done":
             break
 
-    formula[0].set_var_list(var_list)
+    formula[0].set_var_count(var_count)
     return formula
 
 
