@@ -23,14 +23,14 @@ class Type(Enum):
     VARIABLE = 4
 
 
-class Expression(ABC):
+class Formula(ABC):
     def __init__(self, formula_type: Type):
         self._formula_type = formula_type
         self._var_count = {}
         self._quant_list = []
 
     @abstractmethod
-    def print_expression(self):
+    def print_formula(self):
         pass
 
     @abstractmethod
@@ -40,6 +40,9 @@ class Expression(ABC):
     @abstractmethod
     def set_var_count(self, var_count: {}):
         pass
+
+    def set_quant_list(self, quant_list: []):
+        self._quant_list = quant_list
 
     def get_formula_type(self):
         return self._formula_type
@@ -51,16 +54,21 @@ class Expression(ABC):
         return self._quant_list
 
 
-class Binary(Expression):
-    def __init__(self, left: Expression, right: Expression, connective: Connective):
+class Binary(Formula):
+    def __init__(
+            self,
+            left: Formula,
+            right: Formula,
+            connective: Connective
+    ):
         super().__init__(Type.BINARY)
         self._left = left
         self._connective = connective
         self._right = right
 
-    def print_expression(self):
+    def print_formula(self):
         print("(", end="")
-        self._left.print_expression()
+        self._left.print_formula()
         if self._connective == Connective.IMPLICATION:
             print(" ⇒ ", end="")
         if self._connective == Connective.BICONDITIONAL:
@@ -69,7 +77,7 @@ class Binary(Expression):
             print(" ∧ ", end="")
         if self._connective == Connective.OR:
             print(" ∨ ", end="")
-        self._right.print_expression()
+        self._right.print_formula()
         print(")", end="")
 
     def get_left(self):
@@ -90,32 +98,47 @@ class Binary(Expression):
         self._left.set_var_count(var_count)
         self._right.set_var_count(var_count)
 
-    def set_left(self, left: Expression):
+    def set_left(self, left: Formula):
         self._left = left
 
     def set_connective(self, connective: Connective):
         self._connective = connective
 
-    def set_right(self, right: Expression):
+    def set_right(self, right: Formula):
         self._right = right
 
 
-class Unary(Expression):
-    def __init__(self, inside: Expression, quant: Quantifier, neg: bool, var: str):
+class Unary(Formula):
+    def __init__(
+            self,
+            inside: Formula,
+            quant: Quantifier,
+            negation: bool,
+            quant_var: str
+    ):
         super().__init__(Type.UNARY)
         self._quantifier = quant
         self._inside = inside
-        self._quant_var = var
-        self._negation = neg
+        self._quant_var = quant_var
+        self._negation = negation
 
-    def print_expression(self):
+    def print_formula(self):
         if self._negation:
             print("¬", end="")
         if self._quantifier == Quantifier.EXISTENTIAL:
             print("∃" + self._quant_var, end="")
         if self._quantifier == Quantifier.UNIVERSAL:
             print("∀" + self._quant_var, end="")
-        self._inside.print_expression()
+        self._inside.print_formula()
+
+    def get_quantifier(self):
+        return self._quantifier
+
+    def get_inside(self):
+        return self._inside
+
+    def get_quant_var(self):
+        return self._quant_var
 
     def set_var(self, var: str):
         self._inside.set_var(var)
@@ -124,14 +147,26 @@ class Unary(Expression):
         self._var_count = var_count
         self._inside.set_var_count(var_count)
 
+    def set_quantifier(self, quantifier: Quantifier):
+        self._quantifier = quantifier
 
-class Variable(Expression):
+    def set_inside(self, inside: Formula):
+        self._inside = inside
+
+    def set_quant_var(self, quant_var: str):
+        self._quant_var = quant_var
+
+
+class Variable(Formula):
     def __init__(self, var_name):
         super().__init__(Type.VARIABLE)
         self._var_name = var_name
 
-    def print_expression(self):
+    def print_formula(self):
         print(self._var_name, end="")
+
+    def get_var_name(self):
+        return self._var_name
 
     def set_var(self, var_name):
         self._var_name = var_name
@@ -140,16 +175,19 @@ class Variable(Expression):
         self._var_count = var_count
 
 
-class Function(Expression):
-    def __init__(self, name: str, inside: Expression):
+class Function(Formula):
+    def __init__(self, name: str, inside: Formula):
         super().__init__(Type.FUNCTION)
         self._func_name = name
         self._inside = inside
 
-    def print_expression(self):
+    def print_formula(self):
         print(self._func_name + "(", end="")
-        self._inside.print_expression()
+        self._inside.print_formula()
         print(")", end="")
+
+    def get_inside(self):
+        return self._inside
 
     def set_var(self, var):
         self._inside.set_var(var)
@@ -158,13 +196,16 @@ class Function(Expression):
         self._var_count = var_count
         self._inside.set_var_count(var_count)
 
+    def set_inside(self, inside: Formula):
+        self._inside = inside
+
 
 class ResolutionProver:
-    def __init__(self, arg: [Expression]):
+    def __init__(self, arg: [Formula]):
         self._arg = arg
         self._clauses = []
-        self._subscript = 0
         self._setOfSupport = []
+        self._subscript = 0
 
     def print_argument(self):
         for formulas in self._arg:
@@ -175,7 +216,7 @@ class ResolutionProver:
                         print("∃" + item[1], end="")
                     if item[0] == Quantifier.UNIVERSAL:
                         print("∀" + item[1], end="")
-            formulas[0].print_expression()
+            formulas[0].print_formula()
             print("")
 
     def print_clauses(self):
@@ -193,7 +234,7 @@ class ResolutionProver:
         # check if it's the same after assignment
         pass
 
-    def remove_arrows(self, formula: Expression):
+    def remove_arrows(self, formula: Formula):
         formula_type = formula.get_formula_type()
         if formula_type == Type.BINARY:
             new_left = self.remove_arrows(formula.get_left())
@@ -224,12 +265,15 @@ class ResolutionProver:
                 formula.set_connective(Connective.OR)
 
         if formula_type == Type.UNARY:
-            formula._inside = self.remove_arrows(formula._inside)
+            formula.set_inside(
+                self.remove_arrows(formula.get_inside())
+            )
         return formula
 
-    def move_negation_inward(self, formula: Expression, negation_outside: bool):
+    def move_negation_inward(self, formula: Formula, negation_outside: bool):
         formula_type = formula.get_formula_type()
         if formula_type == Type.BINARY:
+            # recursively moving negation inwards for all parts of the formula
             formula.set_left(
                 self.move_negation_inward(
                     formula.get_left(),
@@ -242,7 +286,7 @@ class ResolutionProver:
                     negation_outside
                 )
             )
-
+            # Perform procedure for De Morgan's Law
             if negation_outside and formula.get_connective() == Connective.AND:
                 formula.set_connective(Connective.OR)
             elif negation_outside and formula.get_connective() == Connective.OR:
@@ -251,17 +295,24 @@ class ResolutionProver:
         if formula_type == Type.UNARY:
             if negation_outside and formula._negation:
                 # if previous negation cancels out, we don't reverse quantifiers no negation passed
-                formula._inside = self.move_negation_inward(formula._inside, False)
+                formula.set_inside(
+                    self.move_negation_inward(formula.get_inside(), False)
+                )
             elif negation_outside or formula._negation:
                 # if previous negates results in a negation, we need to reverse quantifiers and pass the negation
-                if formula._quantifier == Quantifier.UNIVERSAL:
-                    formula._quantifier = Quantifier.EXISTENTIAL
-                elif formula._quantifier == Quantifier.EXISTENTIAL:
-                    formula._quantifier = Quantifier.UNIVERSAL
-                formula._inside = self.move_negation_inward(formula._inside, True)
+                if formula.get_quantifier() == Quantifier.UNIVERSAL:
+                    formula.set_quantifier(Quantifier.EXISTENTIAL)
+                elif formula.get_quantifier() == Quantifier.EXISTENTIAL:
+                    formula.set_quantifier(Quantifier.UNIVERSAL)
+
+                formula.set_inside(
+                    self.move_negation_inward(formula.get_inside(), True)
+                )
             else:
                 # if no negation, we don't reverse quantifiers no negation passed
-                formula._inside = self.move_negation_inward(formula._inside, False)
+                formula.set_inside(
+                    self.move_negation_inward(formula.get_inside(), False)
+                )
 
         if (negation_outside
                 and formula_type != Type.BINARY
@@ -274,13 +325,18 @@ class ResolutionProver:
 
         return formula
 
-    def standardize_variables(self, formula: Expression, var_name: str):
+    def standardize_variables(self, formula: Formula, var_name: str):
         formula_type = formula.get_formula_type()
         if formula_type == Type.UNARY:
-            if formula._quant_var == var_name and formula._quantifier != Quantifier.NONE:
+            if (formula.get_quant_var() == var_name
+                    and formula.get_quantifier() != Quantifier.NONE):
                 self._subscript += 1
-                formula._quant_var = var_name + str(self._subscript)
-            formula._inside = self.standardize_variables(formula._inside, var_name)
+                formula.set_quant_var(
+                    var_name + str(self._subscript)
+                )
+            formula.set_inside(
+                self.standardize_variables(formula.get_inside(), var_name)
+            )
         elif formula_type == Type.BINARY:
             formula.set_left(
                 self.standardize_variables(
@@ -295,28 +351,37 @@ class ResolutionProver:
                 )
             )
         elif formula_type == Type.FUNCTION:
-            if formula._inside._var_name == var_name and self._subscript != 0:
+            if formula.get_inside().get_var_name() == var_name and self._subscript != 0:
                 formula.set_var(var_name + str(self._subscript))
         else:
-            if formula._var_name == var_name:
+            if formula.get_var_name() == var_name:
                 formula.set_var(var_name + str(self._subscript))
         return formula
 
-    def move_quantifiers_to_front(self, formula: Expression, quant_list: []):
+    def move_quantifiers_to_front(self, formula: Formula, quant_list: []):
         formula_type = formula.get_formula_type()
         if formula_type == Type.BINARY:
-            quant_list = self.move_quantifiers_to_front(formula.get_left(), quant_list)
-            quant_list = self.move_quantifiers_to_front(formula.get_right(), quant_list)
+            quant_list = self.move_quantifiers_to_front(
+                formula.get_left(),
+                quant_list
+            )
+            quant_list = self.move_quantifiers_to_front(
+                formula.get_right(),
+                quant_list
+            )
         elif formula_type == Type.UNARY:
             if formula._quantifier != Quantifier.NONE:
                 quant_list.append(
-                    (formula._quantifier, formula._quant_var)
+                    (formula._quantifier, formula.get_quant_var())
                 )
                 formula._quantifier = Quantifier.NONE
-            quant_list = self.move_quantifiers_to_front(formula._inside, quant_list)
+            quant_list = self.move_quantifiers_to_front(
+                formula.get_inside(),
+                quant_list
+            )
         return quant_list
 
-    def skolemize(self, formula: Expression, data: tuple[str, str]):
+    def skolemize(self, formula: Formula, data: tuple[str, str]):
         formula_type = formula.get_formula_type()
         if formula_type == Type.BINARY:
             formula.set_left(
@@ -326,84 +391,104 @@ class ResolutionProver:
                 self.skolemize(formula.get_right(), data)
             )
         elif formula_type == Type.UNARY:
-            formula._inside = self.skolemize(formula._inside, data)
+            formula.set_inside(
+                self.skolemize(formula.get_inside(), data)
+            )
         elif formula_type == Type.FUNCTION:
-            if formula._inside.get_formula_type() != Type.VARIABLE:
-                formula._inside = self.skolemize(formula._inside, data)
-            elif formula._inside._var_name == data[0]:
+            inside = formula.get_inside()
+            if inside.get_formula_type() != Type.VARIABLE:
+                formula.set_inside(
+                    self.skolemize(formula.get_inside(), data)
+                )
+            elif inside.get_var_name() == data[0]:
                 prev_var = data[1]
                 if prev_var == "":
                     # if there's no quantifiers
-                    variable = Variable("u")
-                    formula._inside = variable
+                    formula.set_inside(
+                        Variable("u")
+                    )
                 else:
                     # if there's quantifiers outside
-                    variable = Variable(prev_var)
-                    if formula._inside._var_name != prev_var:
-                        function = Function("f", variable)
-                        formula._inside = function
+                    if inside.get_var_name() != prev_var:
+                        formula.set_inside(
+                            Function("f", Variable(prev_var))
+                        )
         return formula
 
     def get_prenex(self):
         print("Sub step 1. removing arrows")
-        for formulas in self._arg:
-            formula = formulas.pop()
+        for formula_holder in self._arg:
+            formula = formula_holder.pop()
             newFormula = self.remove_arrows(formula)
-            formulas.append(newFormula)
+            formula_holder.append(newFormula)
+
         self.print_argument()
         print("")
 
         print("Sub step 2. moving negation inward")
-        for formulas in self._arg:
-            formula = formulas.pop()
+        for formula_holder in self._arg:
+            formula = formula_holder.pop()
             formula_type = formula.get_formula_type()
             var_count = formula.get_var_count()
+
             if formula_type == Type.UNARY:
                 newFormula = self.move_negation_inward(formula, False)
-                newFormula._quantifier = formula._quantifier
+                newFormula.set_quantifier(formula.get_quantifier())
                 newFormula.set_var_count(var_count)
-                formulas.append(newFormula)
+                formula_holder.append(newFormula)
+
             if formula_type == Type.BINARY:
                 newFormula = self.move_negation_inward(formula, False)
                 newFormula.set_var_count(var_count)
-                formulas.append(newFormula)
+                formula_holder.append(newFormula)
+
         self.print_argument()
         print("")
 
         print("Sub step 3. standardize variables")
-        for formulas in self._arg:
-            formula = formulas[0]
+        for formula_holder in self._arg:
+            formula = formula_holder[0]
             var_count = formula.get_var_count()
+
             for var in var_count:
                 self._subscript = 0
-                formulas[0] = self.standardize_variables(formula, var)
+                formula_holder[0] = self.standardize_variables(formula, var)
+
         self.print_argument()
         print("")
 
         print("Sub step 4. moving all quantifiers to front")
-        for formulas in self._arg:
-            formula = formulas[0]
-            formula._quant_list = self.move_quantifiers_to_front(formula, [])
+        for formula_holder in self._arg:
+            formula = formula_holder[0]
+            formula.set_quant_list(
+                self.move_quantifiers_to_front(formula, [])
+            )
+
         self.print_argument()
         print("")
 
         print("Sub step 5. Skolemize the formula")
-        for formulaHolder in self._arg:
+        for formula_holder in self._arg:
             drop_list = []
-            formula = formulaHolder[0]
-            for index, quantHolder in enumerate(formula._quant_list.copy()):
-                quantifier = quantHolder[0]
-                quant_var = quantHolder[1]
-                if len(formula._quant_list) > 1:
-                    prev_var = formula._quant_list[index - 1][1]
+            formula = formula_holder[0]
+
+            quant_list = formula.get_quant_list()
+            for index, quant_holder in enumerate(quant_list.copy()):
+                quantifier = quant_holder[0]
+                quant_var = quant_holder[1]
+                if len(quant_list) > 1:
+                    prev_var = quant_list[index - 1][1]
                 else:
                     prev_var = ""
                 if (quantifier == Quantifier.EXISTENTIAL
-                        and quant_var not in formula._quant_list):
+                        and quant_var not in quant_list):
                     drop_list.append((quant_var, prev_var))
-                    formula._quant_list.pop(index)
+                    quant_list.pop(index)
+                    formula.set_quant_list(quant_list)
+
             for to_drop in drop_list:
-                formulaHolder[0] = self.skolemize(formula, to_drop)
+                formula_holder[0] = self.skolemize(formula, to_drop)
+
         self.print_argument()
         print("")
 
@@ -413,14 +498,11 @@ class ResolutionProver:
     def get_most_common_var(self):
         pass
 
-    def get_clauses(self):
-        pass
-
     def resolve(self, clauses):
         pass
 
 
-def input_formula(formulaInput: [Expression]) -> [Expression]:
+def input_formula(formulaInput: [Formula]) -> [Formula]:
     formula = []
     var_count = {}
 
@@ -429,26 +511,30 @@ def input_formula(formulaInput: [Expression]) -> [Expression]:
             right = formula.pop()
             left = formula.pop()
 
-            binary = Binary(left, right, Connective.IMPLICATION)
-            formula.append(binary)
+            formula.append(
+                Binary(left, right, Connective.IMPLICATION)
+            )
         if part == "<->":
             right = formula.pop()
             left = formula.pop()
 
-            binary = Binary(left, right, Connective.BICONDITIONAL)
-            formula.append(binary)
+            formula.append(
+                Binary(left, right, Connective.BICONDITIONAL)
+            )
         if part == "AND":
             right = formula.pop()
             left = formula.pop()
 
-            binary = Binary(left, right, Connective.AND)
-            formula.append(binary)
+            formula.append(
+                Binary(left, right, Connective.AND)
+            )
         if part == "OR":
             right = formula.pop()
             left = formula.pop()
 
-            binary = Binary(left, right, Connective.OR)
-            formula.append(binary)
+            formula.append(
+                Binary(left, right, Connective.OR)
+            )
         if part == "FORM":
             func_name = input_list[index + 1]
             var_name = input_list[index + 2]
@@ -458,14 +544,15 @@ def input_formula(formulaInput: [Expression]) -> [Expression]:
             else:
                 var_count[var_name] += 1
 
-            variable = Variable(var_name)
-            function = Function(func_name, variable)
-            formula.append(function)
+            formula.append(
+                Function(func_name, Variable(var_name))
+            )
         if part == "NOT":
             inside = formula.pop()
 
-            unary = Unary(inside, Quantifier.NONE, True, "")
-            formula.append(unary)
+            formula.append(
+                Unary(inside, Quantifier.NONE, True, "")
+            )
         if part == "FORALL":
             inside = formula.pop()
             var_name = input_list[index + 1]
@@ -473,8 +560,9 @@ def input_formula(formulaInput: [Expression]) -> [Expression]:
             if var_name not in var_count:
                 var_count[var_name] = 1
 
-            unary = Unary(inside, Quantifier.UNIVERSAL, False, var_name)
-            formula.append(unary)
+            formula.append(
+                Unary(inside, Quantifier.UNIVERSAL, False, var_name)
+            )
         if part == "EXIST":
             inside = formula.pop()
             var_name = input_list[index + 1]
@@ -482,8 +570,9 @@ def input_formula(formulaInput: [Expression]) -> [Expression]:
             if var_name not in var_count:
                 var_count[var_name] = 1
 
-            unary = Unary(inside, Quantifier.EXISTENTIAL, False, var_name)
-            formula.append(unary)
+            formula.append(
+                Unary(inside, Quantifier.EXISTENTIAL, False, var_name)
+            )
         if part == "done":
             break
 
@@ -491,19 +580,19 @@ def input_formula(formulaInput: [Expression]) -> [Expression]:
     return formula
 
 
-def input_commands(command_input: [], args: [[Expression]]):
+def input_commands(command_input: [], args: [[Formula]]):
     for part in command_input:
         if part == "print":
             print("Printing argument")
             for arg in args:
-                arg[len(arg) - 1].print_expression()
+                arg[len(arg) - 1].print_formula()
                 print("")
             print("")
         if part == "resolve":
             apply_resolution(argument)
 
 
-def apply_resolution(arg: [Expression]):
+def apply_resolution(arg: [Formula]):
     resolver = ResolutionProver(arg)
 
     print("Executing Step 1. Negate conclusion")
@@ -526,7 +615,7 @@ def apply_resolution(arg: [Expression]):
 
 
 argument = []
-for line in fileinput.input(files='test2.txt'):
+for line in fileinput.input(files='test1.txt'):
     input_list = line.split()
     label = input_list[0]
     input_list.pop(0)
