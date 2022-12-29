@@ -44,13 +44,13 @@ class Formula(ABC):
     def set_quant_list(self, quant_list: []):
         self._quant_list = quant_list
 
-    def get_formula_type(self):
+    def get_formula_type(self) -> Type:
         return self._formula_type
 
-    def get_var_count(self):
+    def get_var_count(self) -> {}:
         return self._var_count
 
-    def get_quant_list(self):
+    def get_quant_list(self) -> []:
         return self._quant_list
 
 
@@ -80,13 +80,13 @@ class Binary(Formula):
         self._right.print_formula()
         print(")", end="")
 
-    def get_left(self):
+    def get_left(self) -> Formula:
         return self._left
 
-    def get_right(self):
+    def get_right(self) -> Formula:
         return self._right
 
-    def get_connective(self):
+    def get_connective(self) -> Connective:
         return self._connective
 
     def set_var(self, var: str):
@@ -131,13 +131,13 @@ class Unary(Formula):
             print("∀" + self._quant_var, end="")
         self._inside.print_formula()
 
-    def get_quantifier(self):
+    def get_quantifier(self) -> Quantifier:
         return self._quantifier
 
-    def get_inside(self):
+    def get_inside(self) -> Formula:
         return self._inside
 
-    def get_quant_var(self):
+    def get_quant_var(self) -> str:
         return self._quant_var
 
     def set_var(self, var: str):
@@ -165,7 +165,7 @@ class Variable(Formula):
     def print_formula(self):
         print(self._var_name, end="")
 
-    def get_var_name(self):
+    def get_var_name(self) -> str:
         return self._var_name
 
     def set_var(self, var_name):
@@ -186,7 +186,7 @@ class Function(Formula):
         self._inside.print_formula()
         print(")", end="")
 
-    def get_inside(self):
+    def get_inside(self) -> Formula:
         return self._inside
 
     def set_var(self, var):
@@ -234,7 +234,7 @@ class ResolutionProver:
         # check if it's the same after assignment
         pass
 
-    def remove_arrows(self, formula: Formula):
+    def remove_arrows(self, formula: Formula) -> Formula:
         formula_type = formula.get_formula_type()
         if formula_type == Type.BINARY:
             new_left = self.remove_arrows(formula.get_left())
@@ -270,7 +270,7 @@ class ResolutionProver:
             )
         return formula
 
-    def move_negation_inward(self, formula: Formula, negation_outside: bool):
+    def move_negation_inward(self, formula: Formula, negation_outside: bool) -> Formula:
         formula_type = formula.get_formula_type()
         if formula_type == Type.BINARY:
             # recursively moving negation inwards for all parts of the formula
@@ -325,7 +325,7 @@ class ResolutionProver:
 
         return formula
 
-    def standardize_variables(self, formula: Formula, var_name: str):
+    def standardize_variables(self, formula: Formula, var_name: str) -> Formula:
         formula_type = formula.get_formula_type()
         if formula_type == Type.UNARY:
             if (formula.get_quant_var() == var_name
@@ -358,7 +358,7 @@ class ResolutionProver:
                 formula.set_var(var_name + str(self._subscript))
         return formula
 
-    def move_quantifiers_to_front(self, formula: Formula, quant_list: []):
+    def move_quantifiers_to_front(self, formula: Formula, quant_list: []) -> Formula:
         formula_type = formula.get_formula_type()
         if formula_type == Type.BINARY:
             quant_list = self.move_quantifiers_to_front(
@@ -381,7 +381,7 @@ class ResolutionProver:
             )
         return quant_list
 
-    def skolemize(self, formula: Formula, data: tuple[str, str]):
+    def skolemize(self, formula: Formula, data: tuple[str, str]) -> Formula:
         formula_type = formula.get_formula_type()
         if formula_type == Type.BINARY:
             formula.set_left(
