@@ -208,25 +208,25 @@ class ResolutionProver:
         self._subscript = 0
 
     def print_argument(self):
-        for formulas in self._arg:
-            quant_list = formulas[0].get_quant_list()
+        for formula in self._arg:
+            quant_list = formula.get_quant_list()
             if len(quant_list) > 0:
                 for item in quant_list:
                     if item[0] == Quantifier.EXISTENTIAL:
                         print("∃" + item[1], end="")
                     if item[0] == Quantifier.UNIVERSAL:
                         print("∀" + item[1], end="")
-            formulas[0].print_formula()
+            formula.print_formula()
             print("")
 
     def print_clauses(self):
         pass
 
     def negate_conclusion(self):
-        conclusion = self._arg.pop().pop()
+        conclusion = self._arg.pop()
         unary = Unary(conclusion, Quantifier.NONE, True, "")
         unary.set_var_count(conclusion.get_var_count())
-        self._arg.append([unary])
+        self._arg.append(unary)
 
     def check_resolvable(self):
         # check if function name is the same
@@ -417,63 +417,54 @@ class ResolutionProver:
 
     def get_prenex(self):
         print("Sub step 1. removing arrows")
-        for formula_holder in self._arg:
-            formula = formula_holder.pop()
-            new_formula = self.remove_arrows(formula)
-            formula_holder.append(new_formula)
+        for formula in self._arg:
+            formula = self.remove_arrows(formula)
 
         self.print_argument()
         print("")
 
         print("Sub step 2. moving negation inward")
-        for formula_holder in self._arg:
-            formula = formula_holder.pop()
+        for formula in self._arg:
             formula_type = formula.get_formula_type()
             var_count = formula.get_var_count()
 
             if formula_type == Type.UNARY:
-                new_formula = self.move_negation_inward(formula, False)
-                new_formula.set_quantifier(formula.get_quantifier())
-                new_formula.set_var_count(var_count)
-                formula_holder.append(new_formula)
+                formula = self.move_negation_inward(formula, False)
+                formula.set_quantifier(formula.get_quantifier())
+                formula.set_var_count(var_count)
 
             if formula_type == Type.BINARY:
-                new_formula = self.move_negation_inward(formula, False)
-                new_formula.set_var_count(var_count)
-                formula_holder.append(new_formula)
+                formula = self.move_negation_inward(formula, False)
+                formula.set_var_count(var_count)
 
         self.print_argument()
         print("")
 
         print("Sub step 3. standardize variables")
-        for formula_holder in self._arg:
-            formula = formula_holder.pop()
+        for formula in self._arg:
             var_count = formula.get_var_count()
 
             for var in var_count:
                 self._subscript = 0
-                new_formula = self.standardize_variables(formula, var)
-                formula_holder.append(new_formula)
+                formula = self.standardize_variables(formula, var)
 
         self.print_argument()
         print("")
 
         print("Sub step 4. moving all quantifiers to front")
-        for formula_holder in self._arg:
-            formula = formula_holder.pop()
+        for formula in self._arg:
             formula.set_quant_list(
                 self.move_quantifiers_to_front(formula, [])
             )
-            formula_holder.append(formula)
 
         self.print_argument()
         print("")
 
         print("Sub step 5. Skolemize the formula")
-        for formula_holder in self._arg:
+        for formula in self._arg:
             drop_list = []
-            formula = formula_holder.pop()
 
+            # dropping the existentials in the quantifier list
             quant_list = formula.get_quant_list()
             for index, quant_holder in enumerate(quant_list.copy()):
                 quantifier = quant_holder[0]
@@ -488,9 +479,9 @@ class ResolutionProver:
                     quant_list.pop(index)
                     formula.set_quant_list(quant_list)
 
+            # skolemize each variable in the formula
             for to_drop in drop_list:
-                new_formula = self.skolemize(formula, to_drop)
-                formula_holder.append(new_formula)
+                formula = self.skolemize(formula, to_drop)
 
         self.print_argument()
         print("")
@@ -505,7 +496,7 @@ class ResolutionProver:
         pass
 
 
-def input_formula(formulaInput: [Formula]) -> [Formula]:
+def input_formula(formulaInput: [Formula]) -> Formula:
     formula_holder = []
     var_count = {}
 
@@ -579,16 +570,17 @@ def input_formula(formulaInput: [Formula]) -> [Formula]:
         if part == "done":
             break
 
-    formula_holder[0].set_var_count(var_count)
-    return formula_holder
+    formula = formula_holder.pop()
+    formula.set_var_count(var_count)
+    return formula
 
 
-def input_commands(command_input: [], args: [[Formula]]):
+def input_commands(command_input: [], args: [Formula]):
     for part in command_input:
         if part == "print":
             print("Printing argument")
             for arg in args:
-                arg[len(arg) - 1].print_formula()
+                arg.print_formula()
                 print("")
             print("")
         if part == "resolve":
@@ -618,11 +610,13 @@ def apply_resolution(arg: [Formula]):
 
 
 argument = []
-for line in fileinput.input(files='test2.txt'):
+for line in fileinput.input(files='test1.txt'):
     input_list = line.split()
     label = input_list[0]
     input_list.pop(0)
     if label == "input":
-        argument.append(input_formula(input_list))
+        argument.append(
+            input_formula(input_list)
+        )
     if label == "command":
         input_commands(input_list, argument)
