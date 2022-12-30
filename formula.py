@@ -119,6 +119,9 @@ class Unary(Formula):
     def get_quant_var(self) -> str:
         return self._quant_var
 
+    def get_negation(self):
+        return self._negation
+
     def set_var(self, var: str):
         self._inside.set_var(var)
 
@@ -134,6 +137,9 @@ class Unary(Formula):
 
     def set_quant_var(self, quant_var: str):
         self._quant_var = quant_var
+
+    def set_negation(self, negation: bool):
+        self._negation = negation
 
 
 class Variable(Formula):

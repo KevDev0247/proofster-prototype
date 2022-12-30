@@ -30,12 +30,6 @@ class ResolutionProver:
         unary.set_var_count(conclusion.get_var_count())
         self._arg.append(unary)
 
-    def check_resolvable(self):
-        # check if function name is the same
-        # check if one is negated
-        # check if it's the same after assignment
-        pass
-
     def remove_arrows(self, formula: Formula) -> Formula:
         formula_type = formula.get_formula_type()
         if formula_type == Type.BINARY:
@@ -95,12 +89,12 @@ class ResolutionProver:
                 formula.set_connective(Connective.AND)
 
         if formula_type == Type.UNARY:
-            if negation_outside and formula._negation:
+            if negation_outside and formula.get_negation():
                 # if previous negation cancels out, we don't reverse quantifiers no negation passed
                 formula.set_inside(
                     self.move_negation_inward(formula.get_inside(), False)
                 )
-            elif negation_outside or formula._negation:
+            elif negation_outside or formula.get_negation():
                 # if previous negates results in a negation, we need to reverse quantifiers and pass the negation
                 if formula.get_quantifier() == Quantifier.UNIVERSAL:
                     formula.set_quantifier(Quantifier.EXISTENTIAL)
@@ -121,9 +115,9 @@ class ResolutionProver:
                 and formula_type != Type.UNARY):
             # if formula is function, and there's a negation, wraps it in a unary with negation
             formula = Unary(formula, Quantifier.NONE, True, "")
-        else:
-            # if formula is binary or unary, then we are returning to previous, don't add negation
-            formula._negation = False
+        if formula_type == Type.UNARY:
+            # if formula is unary, then we are returning to previous, don't add negation
+            formula.set_negation(False)
 
         return formula
 
@@ -287,6 +281,12 @@ class ResolutionProver:
 
         self.print_argument()
         print("")
+
+    def check_resolvable(self):
+        # check if function name is the same
+        # check if one is negated
+        # check if it's the same after assignment
+        pass
 
     def get_clauses(self):
         pass

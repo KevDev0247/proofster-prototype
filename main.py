@@ -118,7 +118,7 @@ def apply_resolution(arg: [Formula]):
 
 
 argument = []
-for line in fileinput.input(files='test2.txt'):
+for line in fileinput.input(files='/Users/Kevin/PycharmProjects/Proofster/test1.txt'):
     input_list = line.split()
     label = input_list[0]
     input_list.pop(0)
