@@ -284,8 +284,6 @@ class ResolutionProver:
         print("")
 
     def convert_to_cnf(self, formula: Formula):
-        formula.print_formula()
-        print("")
         if formula.get_formula_type() == Type.UNARY:
             formula = self.convert_to_cnf(formula.get_inside())
         if formula.get_formula_type() == Type.BINARY:
@@ -294,17 +292,7 @@ class ResolutionProver:
             left_type = left.get_formula_type()
             right_type = right.get_formula_type()
 
-            if left_type == Type.UNARY and right_type == Type.UNARY:
-                formula.set_left(
-                    self.convert_to_cnf(formula.get_left())
-                )
-                formula.set_right(
-                    self.convert_to_cnf(formula.get_right())
-                )
-
-                if formula.get_connective() == Connective.OR:
-                    formula = self.convert_to_cnf(formula)
-            elif left_type == Type.BINARY:
+            if left_type == Type.BINARY:
                 if (formula.get_connective() == Connective.OR
                         and left.get_connective() == Connective.AND):
                     formula.set_left(
@@ -322,7 +310,6 @@ class ResolutionProver:
                         )
                     )
                     formula.set_connective(Connective.AND)
-                # missing cases
             elif right_type == Type.BINARY:
                 if (formula.get_connective() == Connective.OR
                         and right.get_connective() == Connective.AND):
@@ -336,12 +323,32 @@ class ResolutionProver:
                     formula.set_right(
                         Binary(
                             self.convert_to_cnf(left),
-                            self.convert_to_cnf(right.get_left()),
+                            self.convert_to_cnf(right.get_right()),
                             Connective.OR
                         )
                     )
                     formula.set_connective(Connective.AND)
-                # missing cases
+
+            # make another recursive call to ensure both sides are in CNF
+            formula.set_left(self.convert_to_cnf(formula.get_left()))
+            formula.set_right(self.convert_to_cnf(formula.get_right()))
+
+            # sus
+            # if left_type == Type.BINARY:
+            #     print("formula to be verified")
+            #     formula.print_formula()
+            #     print("")
+            #     formula = self.convert_to_cnf(formula)
+            #
+            # if right_type == Type.BINARY:
+            #     print("formula to be verified")
+            #     formula.print_formula()
+            #     print("")
+            #     formula = self.convert_to_cnf(formula)
+
+        # print("before return")
+        # formula.print_formula()
+        # print("")
         return formula
 
     def populate_clauses(self):
