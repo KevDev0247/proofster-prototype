@@ -6,7 +6,7 @@ class ResolutionProver:
     def __init__(self, arg: [Formula]):
         self._arg = arg
         self._clauses = []
-        self._setOfSupport = []
+        self._support = []
         self._subscript = 0
 
     def print_argument(self):
@@ -214,7 +214,7 @@ class ResolutionProver:
     def get_prenex(self):
         print("Sub step 1. removing arrows")
         for formula in self._arg:
-            formula = self.remove_arrows(formula)
+            self.remove_arrows(formula)
 
         self.print_argument()
         print("")
@@ -282,13 +282,47 @@ class ResolutionProver:
         self.print_argument()
         print("")
 
+    def convert_to_conjunctive_normal(self, formula: Formula):
+        formula_type = formula.get_formula_type()
+        if formula_type == Type.UNARY:
+            pass
+        elif formula_type == Type.BINARY:
+            left_type = formula.left.get_formula_type()
+            right_type = formula.right.get_formula_type()
+            if left_type == Type.UNARY:
+                pass
+            elif right_type == Type.UNARY:
+                pass
+            elif left_type == Type.BINARY and right_type == Type.BINARY:
+                pass
+            elif left_type == Type.BINARY:
+                pass
+            elif right_type == Type.BINARY:
+                pass
+
+            if formula.connective == Connective.AND:
+                pass
+            elif formula.connective == Connective.OR:
+                pass
+        else:
+            pass
+        return formula
+
+    def populate_clauses(self):
+        pass
+
+    def get_clauses(self):
+        print("Sub step 1. Dropping all quantifiers")
+        for formula in self._arg:
+            formula.set_quant_list([])
+
+        self.print_argument()
+        print("")
+
     def check_resolvable(self):
         # check if function name is the same
         # check if one is negated
         # check if it's the same after assignment
-        pass
-
-    def get_clauses(self):
         pass
 
     def get_most_common_var(self):

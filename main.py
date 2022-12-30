@@ -87,8 +87,8 @@ def input_commands(command_input: [], args: [Formula]):
     for part in command_input:
         if part == "print":
             print("Printing argument")
-            for arg in args:
-                arg.print_formula()
+            for formula in args:
+                formula.print_formula()
                 print("")
             print("")
         if part == "resolve":
@@ -112,13 +112,13 @@ def apply_resolution(arg: [Formula]):
 
     print("Executing Step 3. Getting clauses from Prenex Normal Form")
     resolver.get_clauses()
-    print("Step 2 completed")
+    print("Step 3 completed")
     resolver.print_argument()
     print("")
 
 
 argument = []
-for line in fileinput.input(files='/Users/Kevin/PycharmProjects/Proofster/test1.txt'):
+for line in fileinput.input(files='/Users/Kevin/PycharmProjects/Proofster/test2.txt'):
     input_list = line.split()
     label = input_list[0]
     input_list.pop(0)

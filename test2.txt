@@ -1,4 +1,5 @@
 input FORM R y EXIST y FORM S y NOT FORALL y AND FORM Q y NOT EXIST y NOT -> FORALL x
+input FORM A x FORM B x AND FORM C x FORM D x AND OR FORM E x FORM F x AND FORM G x FORM H x AND OR OR
 input FORM F x NOT FORALL x
 command print
 command resolve
