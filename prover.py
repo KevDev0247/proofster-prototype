@@ -284,17 +284,29 @@ class ResolutionProver:
         print("")
 
     def convert_to_cnf(self, formula: Formula):
-        formula_type = formula.get_formula_type()
-        if formula_type == Type.UNARY:
+        formula.print_formula()
+        print("")
+        if formula.get_formula_type() == Type.UNARY:
             formula = self.convert_to_cnf(formula.get_inside())
-        elif formula_type == Type.BINARY:
-            left_type = formula.left.get_formula_type()
-            right_type = formula.right.get_formula_type()
+        if formula.get_formula_type() == Type.BINARY:
             left = formula.get_left()
             right = formula.get_right()
+            left_type = left.get_formula_type()
+            right_type = right.get_formula_type()
 
-            if left_type == Type.BINARY:
-                if formula.connective == Connective.OR and left.connective == Connective.AND:
+            if left_type == Type.UNARY and right_type == Type.UNARY:
+                formula.set_left(
+                    self.convert_to_cnf(formula.get_left())
+                )
+                formula.set_right(
+                    self.convert_to_cnf(formula.get_right())
+                )
+
+                if formula.get_connective() == Connective.OR:
+                    formula = self.convert_to_cnf(formula)
+            elif left_type == Type.BINARY:
+                if (formula.get_connective() == Connective.OR
+                        and left.get_connective() == Connective.AND):
                     formula.set_left(
                         Binary(
                             self.convert_to_cnf(left.get_left()),
@@ -310,8 +322,10 @@ class ResolutionProver:
                         )
                     )
                     formula.set_connective(Connective.AND)
+                # missing cases
             elif right_type == Type.BINARY:
-                if formula.connective == Connective.OR and right.connective == Connective.AND:
+                if (formula.get_connective() == Connective.OR
+                        and right.get_connective() == Connective.AND):
                     formula.set_left(
                         Binary(
                             self.convert_to_cnf(left),
@@ -327,8 +341,7 @@ class ResolutionProver:
                         )
                     )
                     formula.set_connective(Connective.AND)
-        else:
-            pass
+                # missing cases
         return formula
 
     def populate_clauses(self):
@@ -336,18 +349,18 @@ class ResolutionProver:
 
     def get_clauses(self):
         print("Sub step 1. Dropping all quantifiers")
-        for formula in self._arg:
-            formula.set_quant_list([])
+        for f, formula in enumerate(self._arg):
+            self._arg[f].set_quant_list([])
 
         self.print_argument()
         print("")
 
-        # print("Sub step 2. Converting to Conjunctive Normal Form")
-        # for formula in self._arg:
-        #     self.convert_to_cnf(formula)
-        #
-        # self.print_argument()
-        # print("")
+        print("Sub step 2. Converting to Conjunctive Normal Form")
+        for f, formula in enumerate(self._arg):
+            self._arg[f] = self.convert_to_cnf(formula)
+
+        self.print_argument()
+        print("")
 
     def check_resolvable(self):
         # check if function name is the same
