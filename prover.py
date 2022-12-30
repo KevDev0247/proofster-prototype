@@ -213,43 +213,44 @@ class ResolutionProver:
 
     def get_prenex(self):
         print("Sub step 1. removing arrows")
-        for formula in self._arg:
-            self.remove_arrows(formula)
+        for f, formula in enumerate(self._arg):
+            self._arg[f] = self.remove_arrows(formula)
 
         self.print_argument()
         print("")
 
         print("Sub step 2. moving negation inward")
-        for formula in self._arg:
+        for f, formula in enumerate(self._arg):
             formula_type = formula.get_formula_type()
             var_count = formula.get_var_count()
 
+            # need to refactor the var_count set logic
             if formula_type == Type.UNARY:
-                formula = self.move_negation_inward(formula, False)
-                formula.set_quantifier(formula.get_quantifier())
-                formula.set_var_count(var_count)
+                self._arg[f] = self.move_negation_inward(formula, False)
+                self._arg[f].set_quantifier(formula.get_quantifier())
+                self._arg[f].set_var_count(var_count)
 
             if formula_type == Type.BINARY:
-                formula = self.move_negation_inward(formula, False)
-                formula.set_var_count(var_count)
+                self._arg[f] = self.move_negation_inward(formula, False)
+                self._arg[f].set_var_count(var_count)
 
         self.print_argument()
         print("")
 
         print("Sub step 3. standardize variables")
-        for formula in self._arg:
+        for f, formula in enumerate(self._arg):
             var_count = formula.get_var_count()
 
             for var in var_count:
                 self._subscript = 0
-                formula = self.standardize_variables(formula, var)
+                self._arg[f] = self.standardize_variables(formula, var)
 
         self.print_argument()
         print("")
 
         print("Sub step 4. moving all quantifiers to front")
-        for formula in self._arg:
-            formula.set_quant_list(
+        for f, formula in enumerate(self._arg):
+            self._arg[f].set_quant_list(
                 self.move_quantifiers_to_front(formula, [])
             )
 
@@ -257,53 +258,75 @@ class ResolutionProver:
         print("")
 
         print("Sub step 5. Skolemize the formula")
-        for formula in self._arg:
+        for f, formula in enumerate(self._arg):
             drop_list = []
 
             # dropping the existentials in the quantifier list
             quant_list = formula.get_quant_list()
-            for index, quant_holder in enumerate(quant_list.copy()):
+            for q, quant_holder in enumerate(quant_list.copy()):
                 quantifier = quant_holder[0]
                 quant_var = quant_holder[1]
                 if len(quant_list) > 1:
-                    prev_var = quant_list[index - 1][1]
+                    prev_var = quant_list[q - 1][1]
                 else:
                     prev_var = ""
                 if (quantifier == Quantifier.EXISTENTIAL
                         and quant_var not in quant_list):
                     drop_list.append((quant_var, prev_var))
-                    quant_list.pop(index)
-                    formula.set_quant_list(quant_list)
+                    quant_list.pop(q)
+                    self._arg[f].set_quant_list(quant_list)
 
             # skolemize each variable in the formula
             for to_drop in drop_list:
-                formula = self.skolemize(formula, to_drop)
+                self._arg[f] = self.skolemize(formula, to_drop)
 
         self.print_argument()
         print("")
 
-    def convert_to_conjunctive_normal(self, formula: Formula):
+    def convert_to_cnf(self, formula: Formula):
         formula_type = formula.get_formula_type()
         if formula_type == Type.UNARY:
-            pass
+            formula = self.convert_to_cnf(formula.get_inside())
         elif formula_type == Type.BINARY:
             left_type = formula.left.get_formula_type()
             right_type = formula.right.get_formula_type()
-            if left_type == Type.UNARY:
-                pass
-            elif right_type == Type.UNARY:
-                pass
-            elif left_type == Type.BINARY and right_type == Type.BINARY:
-                pass
-            elif left_type == Type.BINARY:
-                pass
-            elif right_type == Type.BINARY:
-                pass
+            left = formula.get_left()
+            right = formula.get_right()
 
-            if formula.connective == Connective.AND:
-                pass
-            elif formula.connective == Connective.OR:
-                pass
+            if left_type == Type.BINARY:
+                if formula.connective == Connective.OR and left.connective == Connective.AND:
+                    formula.set_left(
+                        Binary(
+                            self.convert_to_cnf(left.get_left()),
+                            self.convert_to_cnf(right),
+                            Connective.OR
+                        )
+                    )
+                    formula.set_right(
+                        Binary(
+                            self.convert_to_cnf(left.get_right()),
+                            self.convert_to_cnf(right),
+                            Connective.OR
+                        )
+                    )
+                    formula.set_connective(Connective.AND)
+            elif right_type == Type.BINARY:
+                if formula.connective == Connective.OR and right.connective == Connective.AND:
+                    formula.set_left(
+                        Binary(
+                            self.convert_to_cnf(left),
+                            self.convert_to_cnf(right.get_left()),
+                            Connective.OR
+                        )
+                    )
+                    formula.set_right(
+                        Binary(
+                            self.convert_to_cnf(left),
+                            self.convert_to_cnf(right.get_left()),
+                            Connective.OR
+                        )
+                    )
+                    formula.set_connective(Connective.AND)
         else:
             pass
         return formula
@@ -318,6 +341,13 @@ class ResolutionProver:
 
         self.print_argument()
         print("")
+
+        # print("Sub step 2. Converting to Conjunctive Normal Form")
+        # for formula in self._arg:
+        #     self.convert_to_cnf(formula)
+        #
+        # self.print_argument()
+        # print("")
 
     def check_resolvable(self):
         # check if function name is the same
