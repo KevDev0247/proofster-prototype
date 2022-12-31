@@ -284,9 +284,6 @@ class ResolutionProver:
         print("")
 
     def convert_to_cnf(self, formula: Formula):
-        print("formula to be converted")
-        formula.print_formula()
-        print("")
         if formula.get_formula_type() == Type.UNARY:
             formula = self.convert_to_cnf(formula.get_inside())
         if formula.get_formula_type() == Type.BINARY:
@@ -316,9 +313,6 @@ class ResolutionProver:
             if right_type == Type.BINARY:
                 if (formula.get_connective() == Connective.OR
                         and right.get_connective() == Connective.AND):
-                    print("no effects")
-                    formula.print_formula()
-                    print("")
                     formula.set_left(
                         Binary(
                             self.convert_to_cnf(left),
@@ -339,7 +333,7 @@ class ResolutionProver:
             formula.set_left(self.convert_to_cnf(formula.get_left()))
             formula.set_right(self.convert_to_cnf(formula.get_right()))
 
-            # sus
+            # convert the newly formed binary to CNF
             left = formula.get_left()
             right = formula.get_right()
             left_type = left.get_formula_type()
@@ -347,21 +341,12 @@ class ResolutionProver:
             if (left_type == Type.BINARY
                     and formula.get_connective() == Connective.OR
                     and left.get_connective() == Connective.AND):
-                print("formula to be verified L")
-                formula.print_formula()
-                print("")
                 formula = self.convert_to_cnf(formula)
             if (right_type == Type.BINARY
                     and formula.get_connective() == Connective.OR
                     and right.get_connective() == Connective.AND):
-                print("formula to be verified R ")
-                formula.print_formula()
-                print("")
                 formula = self.convert_to_cnf(formula)
 
-        # print("before return")
-        # formula.print_formula()
-        # print("")
         return formula
 
     def populate_clauses(self):
