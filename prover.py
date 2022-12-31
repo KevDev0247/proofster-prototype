@@ -2,11 +2,22 @@ from enums import Connective, Type, Quantifier
 from formula import Unary, Binary, Variable, Function, Formula
 
 
+def print_clause(clause_group: [[Formula]]):
+    for c, clause in enumerate(clause_group):
+        for f, formula in enumerate(clause):
+            formula.print_formula()
+            if f < len(clause) - 1:
+                print(" ∨ ", end="")
+        if c < len(clause_group) - 1:
+            print(", ", end="")
+    print("")
+
+
 class ResolutionProver:
     def __init__(self, arg: [Formula]):
         self._arg = arg
-        self._clauses = []
-        self._support = []
+        self._premises = []
+        self._negated_conclusion = []
         self._subscript = 0
 
     def print_argument(self):
@@ -22,7 +33,11 @@ class ResolutionProver:
             print("")
 
     def print_clauses(self):
-        pass
+        for p, premise in enumerate(self._premises):
+            print("Premise " + str(p+1) + ": ", end="")
+            print_clause(premise)
+        print("¬Conclusion ", end="")
+        print_clause(self._negated_conclusion[0])
 
     def negate_conclusion(self):
         conclusion = self._arg.pop()
@@ -211,7 +226,7 @@ class ResolutionProver:
                         )
         return formula
 
-    def get_prenex(self):
+    def convert_to_prenex(self):
         print("Sub step 1. removing arrows")
         for f, formula in enumerate(self._arg):
             self._arg[f] = self.remove_arrows(formula)
@@ -283,7 +298,7 @@ class ResolutionProver:
         self.print_argument()
         print("")
 
-    def convert_binary_formula_to_cnf(self, formula: Formula, self_check: bool):
+    def convert_binary_formula_to_cnf(self, formula: Formula, self_check: bool) -> Formula:
         left = formula.get_left()
         right = formula.get_right()
         left_type = left.get_formula_type()
@@ -342,7 +357,7 @@ class ResolutionProver:
             formula.set_right(self.convert_to_cnf(formula.get_right()))
         return formula
 
-    def convert_to_cnf(self, formula: Formula):
+    def convert_to_cnf(self, formula: Formula) -> Formula:
         if formula.get_formula_type() == Type.UNARY:
             # recursively search the inside of unary to perform the conversion procedure
             formula = self.convert_to_cnf(formula.get_inside())
@@ -353,10 +368,49 @@ class ResolutionProver:
             formula = self.convert_binary_formula_to_cnf(formula, True)
         return formula
 
-    def populate_clauses(self):
-        pass
+    def populate_clause(self, formula: Formula, clause: [Formula]) -> [Formula]:
+        print("to populate clause")
+        formula.print_formula()
+        print("")
+        if formula.get_formula_type() == Type.BINARY:
+            clause = self.populate_clause(formula.get_left(), clause)
+            clause = self.populate_clause(formula.get_right(), clause)
+            return clause
+        else:
+            print("this function? ")
+            formula.print_formula()
+            print("")
+            clause.append(formula)
+            return clause
 
-    def get_clauses(self):
+    # save clauses as list of functions
+    def populate_clause_group(self, formula: Formula, clause_group: [[Formula]]) -> bool:
+        print("to add")
+        formula.print_formula()
+        print("")
+        if formula.get_formula_type() != Type.BINARY:
+            return True
+        else:
+            if (formula.get_connective() == Connective.OR
+                    and self.populate_clause_group(formula.get_left(), clause_group)
+                    and self.populate_clause_group(formula.get_right(), clause_group)):
+                return True
+            elif formula.get_connective() == Connective.AND:
+                if self.populate_clause_group(formula.get_left(), clause_group):
+                    new_clause = []
+                    new_clause = self.populate_clause(
+                        formula.get_left(), new_clause
+                    )
+                    clause_group.append(new_clause)
+                if self.populate_clause_group(formula.get_right(), clause_group):
+                    new_clause = []
+                    new_clause = self.populate_clause(
+                        formula.get_right(), new_clause
+                    )
+                    clause_group.append(new_clause)
+                return False
+
+    def convert_to_clauses(self):
         print("Sub step 1. Dropping all quantifiers")
         for f, formula in enumerate(self._arg):
             self._arg[f].set_quant_list([])
@@ -369,6 +423,22 @@ class ResolutionProver:
             self._arg[f] = self.convert_to_cnf(formula)
 
         self.print_argument()
+        print("")
+
+        print("Sub step 3. Converting to clauses")
+        for f, formula in enumerate(self._arg):
+            clause_group = []
+            if self.populate_clause_group(formula, clause_group):
+                new_clause = []
+                new_clause = self.populate_clause(formula, new_clause)
+                clause_group.append(new_clause)
+
+            if f < len(self._arg) - 1:
+                self._premises.append(clause_group)
+            elif f == len(self._arg) - 1:
+                self._negated_conclusion.append(clause_group)
+
+        self.print_clauses()
         print("")
 
     def check_resolvable(self):

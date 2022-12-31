@@ -105,15 +105,15 @@ def apply_resolution(arg: [Formula]):
     print("")
 
     print("Executing Step 2. Turning arguments into ∃-free Prenex Normal Form")
-    resolver.get_prenex()
+    resolver.convert_to_prenex()
     print("Step 2 completed")
     resolver.print_argument()
     print("")
 
     print("Executing Step 3. Getting clauses from Prenex Normal Form")
-    resolver.get_clauses()
+    resolver.convert_to_clauses()
     print("Step 3 completed")
-    resolver.print_argument()
+    resolver.print_clauses()
     print("")
 
 

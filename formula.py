@@ -44,6 +44,7 @@ class Binary(Formula):
         self._left = left
         self._connective = connective
         self._right = right
+        self._is_clause = False
 
     def print_formula(self):
         print("(", end="")
@@ -62,11 +63,14 @@ class Binary(Formula):
     def get_left(self) -> Formula:
         return self._left
 
+    def get_connective(self) -> Connective:
+        return self._connective
+
     def get_right(self) -> Formula:
         return self._right
 
-    def get_connective(self) -> Connective:
-        return self._connective
+    def get_is_clause(self) -> bool:
+        return self._is_clause
 
     def set_var(self, var: str):
         self._left.set_var(var)
@@ -85,6 +89,9 @@ class Binary(Formula):
 
     def set_right(self, right: Formula):
         self._right = right
+
+    def set_is_clause(self, is_clause: bool):
+        self._is_clause = is_clause
 
 
 class Unary(Formula):
