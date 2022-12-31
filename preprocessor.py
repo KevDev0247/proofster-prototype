@@ -20,6 +20,15 @@ class PreProcessor:
         self._negated_conclusion = []
         self._subscript = 0
 
+    def get_arg(self):
+        return self._arg
+
+    def get_premises(self):
+        return self._premises
+
+    def get_negated_conclusion(self):
+        return self._negated_conclusion
+
     def print_argument(self):
         for formula in self._arg:
             quant_list = formula.get_quant_list()

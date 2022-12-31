@@ -2,13 +2,53 @@ import fileinput
 from enums import Connective, Quantifier
 from formula import Unary, Binary, Variable, Function, Formula
 from preprocessor import PreProcessor
+from prover import ResolutionProver
 
 
-def input_formula(formulaInput: [Formula]) -> Formula:
+class Shared:
+    def __init__(self):
+        self._input_complete = False
+        self._arg = []
+        self._premises = []
+        self._negated_conclusion = []
+
+    def print_arg(self):
+        print("Printing ...")
+        for formula in self._arg:
+            formula.print_formula()
+            print("")
+        print("")
+
+    def set_input_complete(self, input_complete):
+        self._input_complete = input_complete
+
+    def set_arg(self, arg):
+        self._arg = arg
+
+    def set_premises(self, premises: [[Formula]]):
+        self._premises = premises
+
+    def set_negated_conclusion(self, negated_conclusion: [[Formula]]):
+        self._negated_conclusion = negated_conclusion
+
+    def get_input_complete(self):
+        return self._input_complete
+
+    def get_arg(self):
+        return self._arg
+
+    def get_premises(self):
+        return self._premises
+
+    def get_negated_conclusion(self):
+        return self._negated_conclusion
+
+
+def input_formula(formula_input: [str]) -> Formula:
     formula_holder = []
     var_count = {}
 
-    for index, part in enumerate(formulaInput):
+    for p, part in enumerate(formula_input):
         if part == "->":
             right = formula_holder.pop()
             left = formula_holder.pop()
@@ -38,8 +78,8 @@ def input_formula(formulaInput: [Formula]) -> Formula:
                 Binary(left, right, Connective.OR)
             )
         if part == "FORM":
-            func_name = input_list[index + 1]
-            var_name = input_list[index + 2]
+            func_name = input_list[p + 1]
+            var_name = input_list[p + 2]
 
             if var_name not in var_count:
                 var_count[var_name] = 1
@@ -57,7 +97,7 @@ def input_formula(formulaInput: [Formula]) -> Formula:
             )
         if part == "FORALL":
             inside = formula_holder.pop()
-            var_name = input_list[index + 1]
+            var_name = input_list[p + 1]
 
             if var_name not in var_count:
                 var_count[var_name] = 1
@@ -67,7 +107,7 @@ def input_formula(formulaInput: [Formula]) -> Formula:
             )
         if part == "EXIST":
             inside = formula_holder.pop()
-            var_name = input_list[index + 1]
+            var_name = input_list[p + 1]
 
             if var_name not in var_count:
                 var_count[var_name] = 1
@@ -83,9 +123,13 @@ def input_formula(formulaInput: [Formula]) -> Formula:
     return formula
 
 
-def preprocess(arg: [Formula]):
-    preprocessor = PreProcessor(arg)
+def resolve(prover: ResolutionProver):
+    print("Resolving ...")
+    pass
 
+
+def preprocess(preprocessor: PreProcessor) -> PreProcessor:
+    print("Preprocessing ...")
     print("Executing Step 1. Negate conclusion")
     preprocessor.negate_conclusion()
     print("Step 1 completed")
@@ -104,28 +148,43 @@ def preprocess(arg: [Formula]):
     preprocessor.print_clauses()
     print("")
 
+    shared.set_arg(preprocessor.get_arg())
+    shared.set_premises(preprocessor.get_premises())
+    shared.set_negated_conclusion(preprocessor.get_negated_conclusion())
+    print("Preprocessing finished!")
 
-def input_commands(command_input: [], args: [Formula]):
-    for part in command_input:
-        if part == "print":
-            print("Printing ...")
-            for formula in args:
-                formula.print_formula()
-                print("")
-            print("")
-        if part == "preprocess":
-            print("Preprocessing ...")
-            preprocess(argument)
+    return preprocessor
 
 
-argument = []
+def process_commands(cmd: str, user_input: []):
+    if cmd == "input":
+        if len(user_input) > 0:
+            arg = shared.get_arg()
+            arg.append(
+                input_formula(input_list)
+            )
+            shared.set_arg(arg)
+        else:
+            raise Exception("No input")
+    if cmd == "complete":
+        shared.set_input_complete(True)
+    if cmd == "print":
+        shared.print_arg()
+    if cmd == "preprocess":
+        preprocess(
+            PreProcessor(shared.get_arg())
+        )
+    if cmd == "resolve":
+        resolve(
+            ResolutionProver(
+                shared.get_premises(),
+                shared.get_negated_conclusion()
+            )
+        )
+
+
+shared = Shared()
 for line in fileinput.input(files='/Users/Kevin/PycharmProjects/Proofster/test2.txt'):
     input_list = line.split()
-    label = input_list[0]
-    input_list.pop(0)
-    if label == "input":
-        argument.append(
-            input_formula(input_list)
-        )
-    if label == "command":
-        input_commands(input_list, argument)
+    command = input_list.pop(0)
+    process_commands(command, input_list)
