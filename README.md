@@ -1,6 +1,6 @@
 # Proofster
 
-Work in Progress! An automatic theorem assistant and prover for first order logic using the resolution procedure learnt in CS 245 Logic and Computation course at University of Waterloo. Currently, the preprocessor is functional! Preprocessor is capadable of producing a set of clauses for premises and conclusions from the user input. 
+Work in Progress! An automatic theorem assistant and prover for first order logic using the resolution procedure learnt in CS 245 Logic and Computation course at University of Waterloo. Currently, the preprocessor is functional! Preprocessor is capable of producing a set of clauses for premises and conclusions from the user input. 
 
 ## Implementation Details
 Class: Formula, Unary, Binary, Function, Variable
