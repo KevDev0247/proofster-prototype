@@ -369,25 +369,16 @@ class ResolutionProver:
         return formula
 
     def populate_clause(self, formula: Formula, clause: [Formula]) -> [Formula]:
-        print("to populate clause")
-        formula.print_formula()
-        print("")
         if formula.get_formula_type() == Type.BINARY:
             clause = self.populate_clause(formula.get_left(), clause)
             clause = self.populate_clause(formula.get_right(), clause)
             return clause
         else:
-            print("this function? ")
-            formula.print_formula()
-            print("")
             clause.append(formula)
             return clause
 
     # save clauses as list of functions
     def populate_clause_group(self, formula: Formula, clause_group: [[Formula]]) -> bool:
-        print("to add")
-        formula.print_formula()
-        print("")
         if formula.get_formula_type() != Type.BINARY:
             return True
         else:
