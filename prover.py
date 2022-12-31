@@ -283,70 +283,74 @@ class ResolutionProver:
         self.print_argument()
         print("")
 
-    def convert_to_cnf(self, formula: Formula):
-        if formula.get_formula_type() == Type.UNARY:
-            formula = self.convert_to_cnf(formula.get_inside())
-        if formula.get_formula_type() == Type.BINARY:
-            left = formula.get_left()
-            right = formula.get_right()
-            left_type = left.get_formula_type()
-            right_type = right.get_formula_type()
+    def convert_binary_formula_to_cnf(self, formula: Formula, self_check: bool):
+        left = formula.get_left()
+        right = formula.get_right()
+        left_type = left.get_formula_type()
+        right_type = right.get_formula_type()
 
-            if left_type == Type.BINARY:
-                if (formula.get_connective() == Connective.OR
-                        and left.get_connective() == Connective.AND):
-                    formula.set_left(
-                        Binary(
-                            self.convert_to_cnf(left.get_left()),
-                            self.convert_to_cnf(right),
-                            Connective.OR
-                        )
+        if (left_type == Type.BINARY
+                and formula.get_connective() == Connective.OR
+                and left.get_connective() == Connective.AND):
+            if self_check:
+                # convert the current binary formula to cnf
+                formula = self.convert_to_cnf(formula)
+            else:
+                # perform basic conversion procedure, but won't result a cnf
+                formula.set_left(
+                    Binary(
+                        self.convert_to_cnf(left.get_left()),
+                        self.convert_to_cnf(right),
+                        Connective.OR
                     )
-                    formula.set_right(
-                        Binary(
-                            self.convert_to_cnf(left.get_right()),
-                            self.convert_to_cnf(right),
-                            Connective.OR
-                        )
+                )
+                formula.set_right(
+                    Binary(
+                        self.convert_to_cnf(left.get_right()),
+                        self.convert_to_cnf(right),
+                        Connective.OR
                     )
-                    formula.set_connective(Connective.AND)
-            if right_type == Type.BINARY:
-                if (formula.get_connective() == Connective.OR
-                        and right.get_connective() == Connective.AND):
-                    formula.set_left(
-                        Binary(
-                            self.convert_to_cnf(left),
-                            self.convert_to_cnf(right.get_left()),
-                            Connective.OR
-                        )
+                )
+                formula.set_connective(Connective.AND)
+        if (right_type == Type.BINARY
+                and formula.get_connective() == Connective.OR
+                and right.get_connective() == Connective.AND):
+            if self_check:
+                # convert the current binary formula to cnf
+                formula = self.convert_to_cnf(formula)
+            else:
+                # perform basic conversion procedure, but won't result a cnf
+                formula.set_left(
+                    Binary(
+                        self.convert_to_cnf(left),
+                        self.convert_to_cnf(right.get_left()),
+                        Connective.OR
                     )
-                    formula.set_right(
-                        Binary(
-                            self.convert_to_cnf(left),
-                            self.convert_to_cnf(right.get_right()),
-                            Connective.OR
-                        )
+                )
+                formula.set_right(
+                    Binary(
+                        self.convert_to_cnf(left),
+                        self.convert_to_cnf(right.get_right()),
+                        Connective.OR
                     )
-                    formula.set_connective(Connective.AND)
+                )
+                formula.set_connective(Connective.AND)
 
+        if not self_check:
             # make another recursive call to ensure both sides are in CNF
             formula.set_left(self.convert_to_cnf(formula.get_left()))
             formula.set_right(self.convert_to_cnf(formula.get_right()))
+        return formula
 
+    def convert_to_cnf(self, formula: Formula):
+        if formula.get_formula_type() == Type.UNARY:
+            # recursively search the inside of unary to perform the conversion procedure
+            formula = self.convert_to_cnf(formula.get_inside())
+        if formula.get_formula_type() == Type.BINARY:
+            # convert the two sides of binary into CNF and change connective
+            formula = self.convert_binary_formula_to_cnf(formula, False)
             # convert the newly formed binary to CNF
-            left = formula.get_left()
-            right = formula.get_right()
-            left_type = left.get_formula_type()
-            right_type = right.get_formula_type()
-            if (left_type == Type.BINARY
-                    and formula.get_connective() == Connective.OR
-                    and left.get_connective() == Connective.AND):
-                formula = self.convert_to_cnf(formula)
-            if (right_type == Type.BINARY
-                    and formula.get_connective() == Connective.OR
-                    and right.get_connective() == Connective.AND):
-                formula = self.convert_to_cnf(formula)
-
+            formula = self.convert_binary_formula_to_cnf(formula, True)
         return formula
 
     def populate_clauses(self):
