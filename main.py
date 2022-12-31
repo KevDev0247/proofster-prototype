@@ -1,7 +1,7 @@
 import fileinput
 from enums import Connective, Quantifier
 from formula import Unary, Binary, Variable, Function, Formula
-from prover import ResolutionProver
+from preprocessor import PreProcessor
 
 
 def input_formula(formulaInput: [Formula]) -> Formula:
@@ -83,38 +83,39 @@ def input_formula(formulaInput: [Formula]) -> Formula:
     return formula
 
 
+def preprocess(arg: [Formula]):
+    preprocessor = PreProcessor(arg)
+
+    print("Executing Step 1. Negate conclusion")
+    preprocessor.negate_conclusion()
+    print("Step 1 completed")
+    preprocessor.print_argument()
+    print("")
+
+    print("Executing Step 2. Turning arguments into ∃-free Prenex Normal Form")
+    preprocessor.convert_to_prenex()
+    print("Step 2 completed")
+    preprocessor.print_argument()
+    print("")
+
+    print("Executing Step 3. Getting clauses from Prenex Normal Form")
+    preprocessor.convert_to_clauses()
+    print("Step 3 completed")
+    preprocessor.print_clauses()
+    print("")
+
+
 def input_commands(command_input: [], args: [Formula]):
     for part in command_input:
         if part == "print":
-            print("Printing argument")
+            print("Printing ...")
             for formula in args:
                 formula.print_formula()
                 print("")
             print("")
-        if part == "resolve":
-            apply_resolution(argument)
-
-
-def apply_resolution(arg: [Formula]):
-    resolver = ResolutionProver(arg)
-
-    print("Executing Step 1. Negate conclusion")
-    resolver.negate_conclusion()
-    print("Step 1 completed")
-    resolver.print_argument()
-    print("")
-
-    print("Executing Step 2. Turning arguments into ∃-free Prenex Normal Form")
-    resolver.convert_to_prenex()
-    print("Step 2 completed")
-    resolver.print_argument()
-    print("")
-
-    print("Executing Step 3. Getting clauses from Prenex Normal Form")
-    resolver.convert_to_clauses()
-    print("Step 3 completed")
-    resolver.print_clauses()
-    print("")
+        if part == "preprocess":
+            print("Preprocessing ...")
+            preprocess(argument)
 
 
 argument = []
