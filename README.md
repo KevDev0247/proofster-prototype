@@ -4,7 +4,7 @@ Work in Progress! An automatic theorem assistant and prover (potentially) for fi
 
 ## Demo
 <p float="left">
-  <img src="https://user-images.githubusercontent.com/58012125/210198419-607eee83-bf4d-4d79-9c9e-4e4bd27a3551.png" width="470" />
+  <img src="https://user-images.githubusercontent.com/58012125/210198419-607eee83-bf4d-4d79-9c9e-4e4bd27a3551.png" width="480" />
   <img src="https://user-images.githubusercontent.com/58012125/210198468-db2210d5-c9f0-4499-ab00-b38c62fbf24f.png" width="450" />
 </p>
 
