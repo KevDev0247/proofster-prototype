@@ -1,6 +1,6 @@
 # Proofster
 
-Work in Progress! An automatic theorem assistant and prover (potentially) for first order logic using the resolution procedure learnt in CS 245 Logic and Computation course at University of Waterloo. Currently, the preprocessor is functional! Preprocessor is capable of producing a set of clauses for premises and negated conclusions from the user inputted premises and conclusions. Some of the sub procedures like CNF conversions are also useful for general first order logic algebra
+Work in Progress! An automatic theorem assistant and prover (potentially) for first order logic using the resolution procedure learnt in CS 245 Logic and Computation course at University of Waterloo. Currently, the preprocessor is functional! Preprocessor is capable of producing a set of clauses for premises and negated conclusions from the user inputted premises and conclusions. Some of the algorithms like CNF Conversions, Arrow Removing, Moving Negation Inwards are also useful for general first order logic algebra
 
 ## Demo
 <p float="left">
