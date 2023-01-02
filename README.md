@@ -1,6 +1,12 @@
 # Proofster
 
-Work in Progress! An automatic theorem assistant and prover (potentially) for first order logic using the resolution procedure learnt in CS 245 Logic and Computation course at University of Waterloo. Currently, the preprocessor is functional! Preprocessor is capable of producing a set of clauses for premises and negated conclusions from the user inputted premises and conclusions.
+Work in Progress! An automatic theorem assistant and prover (potentially) for first order logic using the resolution procedure learnt in CS 245 Logic and Computation course at University of Waterloo. Currently, the preprocessor is functional! Preprocessor is capable of producing a set of clauses for premises and negated conclusions from the user inputted premises and conclusions. Some of the sub procedures like CNF conversions are also useful for general first order logic algebra
+
+## Demo
+<p float="left">
+  <img src="https://user-images.githubusercontent.com/58012125/210198419-607eee83-bf4d-4d79-9c9e-4e4bd27a3551.png" width="500" />
+  <img src="https://user-images.githubusercontent.com/58012125/210198468-db2210d5-c9f0-4499-ab00-b38c62fbf24f.png" width="450" />
+</p>
 
 ## Implementation Details
 Class: Formula, Unary, Binary, Function, Variable\
