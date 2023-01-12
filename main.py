@@ -184,7 +184,7 @@ def process_commands(cmd: str, user_input: []):
 
 
 shared = Shared()
-for line in fileinput.input(files='/Users/Kevin/PycharmProjects/Proofster/test2.txt'):
+for line in fileinput.input(files='/Users/Kevin/PycharmProjects/Proofster/test1.txt'):
     input_list = line.split()
     command = input_list.pop(0)
     process_commands(command, input_list)

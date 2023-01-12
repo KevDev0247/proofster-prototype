@@ -281,7 +281,7 @@ class PreProcessor:
         self.print_argument()
         print("")
 
-        print("Sub step 5. Skolemize the formula")
+        print("Sub step 5. skolemize the formula")
         for f, formula in enumerate(self._arg):
             drop_list = []
 
@@ -368,6 +368,8 @@ class PreProcessor:
 
     def convert_to_cnf(self, formula: Formula) -> Formula:
         if formula.get_formula_type() == Type.UNARY:
+            if formula.get_inside().get_formula_type() == Type.FUNCTION:
+                formula.get_inside().set_negation(formula.get_negation())
             # recursively search the inside of unary to perform the conversion procedure
             formula = self.convert_to_cnf(formula.get_inside())
         if formula.get_formula_type() == Type.BINARY:
@@ -410,21 +412,21 @@ class PreProcessor:
                 return False
 
     def convert_to_clauses(self):
-        print("Sub step 1. Dropping all quantifiers")
+        print("Sub step 1. dropping all quantifiers")
         for f, formula in enumerate(self._arg):
             self._arg[f].set_quant_list([])
 
         self.print_argument()
         print("")
 
-        print("Sub step 2. Converting to Conjunctive Normal Form")
+        print("Sub step 2. converting to Conjunctive Normal Form")
         for f, formula in enumerate(self._arg):
             self._arg[f] = self.convert_to_cnf(formula)
 
         self.print_argument()
         print("")
 
-        print("Sub step 3. Converting to clauses")
+        print("Sub step 3. converting to clauses")
         for f, formula in enumerate(self._arg):
             clause_group = []
             if self.populate_clause_group(formula, clause_group):
