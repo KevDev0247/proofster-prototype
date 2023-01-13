@@ -157,7 +157,7 @@ def preprocess(preprocessor: PreProcessor) -> PreProcessor:
 
     shared.set_arg(preprocessor.get_arg())
     shared.set_premises(preprocessor.get_premises())
-    shared.set_negated_conclusion(preprocessor.get_negated_conclusion())
+    shared.set_negated_conclusion(preprocessor.get_negated_conclusion()[0])
     shared.set_clauses(clauses)
 
     print("Preprocessing finished!")
@@ -187,7 +187,7 @@ def process_commands(cmd: str, user_input: []):
         resolve(
             ResolutionProver(
                 shared.get_clauses(),
-                shared.get_negated_conclusion()
+                shared.get_negated_conclusion()[0]
             )
         )
 

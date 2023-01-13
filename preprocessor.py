@@ -448,9 +448,4 @@ class PreProcessor:
                 clauses.append(clause)
         clauses.append(self._negated_conclusion[0])
 
-        for clause in clauses:
-            for atom in clause:
-                if atom.get_inside().get_formula_type() != Type.VARIABLE:
-                    atom.set_assignable(False)
-
         return clauses

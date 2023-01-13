@@ -173,7 +173,7 @@ class Function(Formula):
         self._func_name = name
         self._inside = inside
         self._negation = False
-        self._assignable = True
+        self._assigned = True
 
     def print_formula(self):
         if self._negation:
@@ -191,8 +191,8 @@ class Function(Formula):
     def get_negation(self) -> bool:
         return self._negation
 
-    def get_assignable(self) -> bool:
-        return self._assignable
+    def get_assigned(self) -> bool:
+        return self._assigned
 
     def set_var_count(self, var_count: {}):
         self._var_count = var_count
@@ -207,5 +207,5 @@ class Function(Formula):
     def set_negation(self, negation: bool):
         self._negation = negation
 
-    def set_assignable(self, assignable: bool):
-        self._assignable = assignable
+    def set_assigned(self, assigned: bool):
+        self._assigned = assigned
