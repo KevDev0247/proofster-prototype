@@ -1,5 +1,5 @@
 import fileinput
-from enums import Connective, Quantifier
+from enums import Connective, Quantifier, Type
 from formula import Unary, Binary, Variable, Function, Formula
 from preprocessor import PreProcessor
 from prover import ResolutionProver
@@ -11,6 +11,7 @@ class Shared:
         self._arg = []
         self._premises = []
         self._negated_conclusion = []
+        self._clauses = []
 
     def print_arg(self):
         print("Printing ...")
@@ -31,6 +32,9 @@ class Shared:
     def set_negated_conclusion(self, negated_conclusion: [[Formula]]):
         self._negated_conclusion = negated_conclusion
 
+    def set_clauses(self, clauses: [Formula]):
+        self._clauses = clauses
+
     def get_input_complete(self):
         return self._input_complete
 
@@ -42,6 +46,9 @@ class Shared:
 
     def get_negated_conclusion(self):
         return self._negated_conclusion
+
+    def get_clauses(self):
+        return self._clauses
 
 
 def input_formula(formula_input: [str]) -> Formula:
@@ -143,7 +150,7 @@ def preprocess(preprocessor: PreProcessor) -> PreProcessor:
     print("")
 
     print("Executing Step 3. Getting clauses from Prenex Normal Form")
-    preprocessor.convert_to_clauses()
+    clauses = preprocessor.convert_to_clauses()
     print("Step 3 completed")
     preprocessor.print_clauses()
     print("")
@@ -151,6 +158,8 @@ def preprocess(preprocessor: PreProcessor) -> PreProcessor:
     shared.set_arg(preprocessor.get_arg())
     shared.set_premises(preprocessor.get_premises())
     shared.set_negated_conclusion(preprocessor.get_negated_conclusion())
+    shared.set_clauses(clauses)
+
     print("Preprocessing finished!")
 
     return preprocessor
@@ -177,7 +186,7 @@ def process_commands(cmd: str, user_input: []):
     if cmd == "resolve":
         resolve(
             ResolutionProver(
-                shared.get_premises(),
+                shared.get_clauses(),
                 shared.get_negated_conclusion()
             )
         )

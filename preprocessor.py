@@ -411,7 +411,7 @@ class PreProcessor:
                     clause_group.append(new_clause)
                 return False
 
-    def convert_to_clauses(self):
+    def convert_to_clauses(self) -> [Formula]:
         print("Sub step 1. dropping all quantifiers")
         for f, formula in enumerate(self._arg):
             self._arg[f].set_quant_list([])
@@ -441,3 +441,16 @@ class PreProcessor:
 
         self.print_clauses()
         print("")
+
+        clauses = []
+        for premise in self._premises:
+            for clause in premise:
+                clauses.append(clause)
+        clauses.append(self._negated_conclusion[0])
+
+        for clause in clauses:
+            for atom in clause:
+                if atom.get_inside().get_formula_type() != Type.VARIABLE:
+                    atom.set_assignable(False)
+
+        return clauses
