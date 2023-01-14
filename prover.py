@@ -12,31 +12,38 @@ def is_assignable(target: Formula, assignment: Formula):
 
 
 def assign_var(clause: [Formula], to_assign: Formula, assignment: Formula) -> [Formula]:
+    # need to make copy ctor
+    to_assign_var = to_assign.get_inside().get_var_name()
     for atom in clause:
         inside = atom.get_inside()
         if inside.get_formula_type() != Type.VARIABLE:
-            if inside.get_inside().get_var_name() == to_assign.get_inside().get_var_name():
-                inside.set_inside(assignment.get_inside())
+            if inside.get_inside().get_var_name() == to_assign_var:
+                inside.set_inside(
+                    Variable(assignment.get_inside().get_var_name())
+                )
         else:
-            print("to assign ", end="")
-            to_assign.print_formula()
-            print("")
-            if inside.get_var_name() == to_assign.get_inside().get_var_name():
-                atom.set_inside(assignment.get_inside())
+            # atom and to assign are pointing at the same thing
+            if inside.get_var_name() == to_assign_var:
+                atom.set_inside(
+                    Variable(assignment.get_inside().get_var_name())
+                )
     return clause
 
 
 def assign_func(clause: [Formula], to_assign: Formula, assignment: Formula):
     for atom in clause:
         inside = atom.get_inside()
-
         if inside.get_var_name() == to_assign.get_var_name():
-            atom.set_inside(assignment.get_inside())
+            atom.set_inside(
+                Variable(assignment.get_inside().get_var_name())
+            )
     return clause
 
 
 def assign(clause: [Formula], to_assign: Formula, assignment: Formula):
+    # need copy ctor
     inside_type = assignment.get_inside().get_formula_type()
+    origin = to_assign
     if inside_type == Type.VARIABLE:
         assign_var(
             clause, to_assign,
@@ -51,7 +58,7 @@ def assign(clause: [Formula], to_assign: Formula, assignment: Formula):
     print("Assigned ", end="")
     assignment.print_formula()
     print(" to ", end="")
-    to_assign.print_formula()
+    origin.print_formula()
     print("")
 
 
@@ -83,22 +90,29 @@ class ResolutionProver:
                         to_resolve.get_negation() != atom.get_negation() and
                         is_assignable(atom, to_resolve)):
                     # perform assignment and resolve
+                    unresolved = self._clauses[c].copy()
                     assign(self._clauses[c], atom, to_resolve)
                     self._clauses[c].pop(a)
 
                     # adding resolvent to set of support
-                    clause_to_add = self._clauses[c].copy()
-                    for t, to_check in enumerate(clause_to_add):
+                    resolvent = self._clauses[c].copy()
+                    for t, to_check in enumerate(resolvent):
                         if self.is_in_support(to_check):
-                            clause_to_add.pop(t)
-                    self._support.append(clause_to_add)
+                            resolvent.pop(t)
+                    self._support.append(resolvent)
 
                     # print something
                     print("Resolution Step")
                     print("Resolved ", end="")
                     to_resolve.print_formula()
                     print(" and ", end="")
-                    for f, final in enumerate(self._clauses[c]):
+                    for f, final in enumerate(unresolved):
+                        final.print_formula()
+                        print(" ", end="")
+                    print("")
+
+                    print("Resolvent ", end="")
+                    for f, final in enumerate(resolvent):
                         final.print_formula()
                         print(" ", end="")
                     print("")
