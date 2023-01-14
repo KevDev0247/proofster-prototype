@@ -132,6 +132,7 @@ def input_formula(formula_input: [str]) -> Formula:
 
 def resolve(prover: ResolutionProver):
     print("Resolving ...")
+    prover.apply_resolution()
     pass
 
 
