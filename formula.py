@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from typing import Dict, List, Tuple
 from enums import Connective, Type, Quantifier
 
 
@@ -17,19 +18,19 @@ class Formula(ABC):
         pass
 
     @abstractmethod
-    def set_var_count(self, var_count: {}):
+    def set_var_count(self, var_count: Dict):
         pass
 
-    def set_quant_list(self, quant_list: []):
+    def set_quant_list(self, quant_list: List[Tuple[Quantifier, str]]):
         self._quant_list = quant_list
 
     def get_formula_type(self) -> Type:
         return self._formula_type
 
-    def get_var_count(self) -> {}:
+    def get_var_count(self) -> Dict:
         return self._var_count
 
-    def get_quant_list(self) -> []:
+    def get_quant_list(self) -> List[Tuple[Quantifier, str]]:
         return self._quant_list
 
 
@@ -76,7 +77,7 @@ class Binary(Formula):
         self._left.set_var(var)
         self._right.set_var(var)
 
-    def set_var_count(self, var_count: {}):
+    def set_var_count(self, var_count: Dict):
         self._var_count = var_count
         self._left.set_var_count(var_count)
         self._right.set_var_count(var_count)
@@ -98,12 +99,12 @@ class Unary(Formula):
     def __init__(
             self,
             inside: Formula,
-            quant: Quantifier,
+            quantifier: Quantifier,
             negation: bool,
             quant_var: str
     ):
         super().__init__(Type.UNARY)
-        self._quantifier = quant
+        self._quantifier = quantifier
         self._inside = inside
         self._quant_var = quant_var
         self._negation = negation
@@ -132,7 +133,7 @@ class Unary(Formula):
     def set_var(self, var: str):
         self._inside.set_var(var)
 
-    def set_var_count(self, var_count: {}):
+    def set_var_count(self, var_count: Dict):
         self._var_count = var_count
         self._inside.set_var_count(var_count)
 
@@ -163,7 +164,7 @@ class Variable(Formula):
     def set_var(self, var_name):
         self._var_name = var_name
 
-    def set_var_count(self, var_count: {}):
+    def set_var_count(self, var_count: Dict):
         self._var_count = var_count
 
 
@@ -194,7 +195,7 @@ class Function(Formula):
     def get_assigned(self) -> bool:
         return self._assigned
 
-    def set_var_count(self, var_count: {}):
+    def set_var_count(self, var_count: Dict):
         self._var_count = var_count
         self._inside.set_var_count(var_count)
 

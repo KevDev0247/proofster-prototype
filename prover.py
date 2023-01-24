@@ -83,6 +83,12 @@ class ResolutionProver:
                 return True
         return False
 
+    # bug
+    # Resolved
+    # F(u) and G(f(x1)) ¬F(u) G(u)
+    # Resolvent
+    # G(f(x1))
+
     def resolve(self, to_resolve: Formula):
         for c, clause in enumerate(self._clauses):
             for a, atom in enumerate(clause):
