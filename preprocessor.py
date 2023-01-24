@@ -190,11 +190,11 @@ class PreProcessor:
                 quant_list
             )
         elif formula_type == Type.UNARY:
-            if formula._quantifier != Quantifier.NONE:
+            if formula.get_quantifier() != Quantifier.NONE:
                 quant_list.append(
-                    (formula._quantifier, formula.get_quant_var())
+                    (formula.get_quantifier(), formula.get_quant_var())
                 )
-                formula._quantifier = Quantifier.NONE
+                formula.set_quantifier(Quantifier.NONE)
             quant_list = self.move_quantifiers_to_front(
                 formula.get_inside(),
                 quant_list
