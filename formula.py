@@ -10,6 +10,10 @@ class Formula(ABC):
         self._quant_list = []
 
     @abstractmethod
+    def to_string(self) -> str:
+        pass
+
+    @abstractmethod
     def print_formula(self):
         pass
 
@@ -35,6 +39,7 @@ class Formula(ABC):
 
 
 class Binary(Formula):
+
     def __init__(
             self,
             left: Formula,
@@ -47,19 +52,22 @@ class Binary(Formula):
         self._right = right
         self._is_clause = False
 
-    def print_formula(self):
-        print("(", end="")
-        self._left.print_formula()
+    def to_string(self) -> str:
+        result = "(" + self._left.to_string()
         if self._connective == Connective.IMPLICATION:
-            print(" ⇒ ", end="")
+            result += " ⇒ "
         if self._connective == Connective.BICONDITIONAL:
-            print(" ⇔ ", end="")
+            result += " ⇔ "
         if self._connective == Connective.AND:
-            print(" ∧ ", end="")
+            result += " ∧ "
         if self._connective == Connective.OR:
-            print(" ∨ ", end="")
-        self._right.print_formula()
-        print(")", end="")
+            result += " ∨ "
+        result += self._right.to_string()
+        result += ")"
+        return result
+
+    def print_formula(self):
+        print(self.to_string(), end="")
 
     def get_left(self) -> Formula:
         return self._left
@@ -109,14 +117,19 @@ class Unary(Formula):
         self._quant_var = quant_var
         self._negation = negation
 
-    def print_formula(self):
+    def to_string(self) -> str:
+        result = ""
         if self._negation:
-            print("¬", end="")
+            result += "¬"
         if self._quantifier == Quantifier.EXISTENTIAL:
-            print("∃" + self._quant_var, end="")
+            result += "∃"
         if self._quantifier == Quantifier.UNIVERSAL:
-            print("∀" + self._quant_var, end="")
-        self._inside.print_formula()
+            result += "∀"
+        result += self._inside.to_string()
+        return result
+
+    def print_formula(self):
+        print(self.to_string(), end="")
 
     def get_quantifier(self) -> Quantifier:
         return self._quantifier
@@ -155,8 +168,11 @@ class Variable(Formula):
         super().__init__(Type.VARIABLE)
         self._var_name = var_name
 
+    def to_string(self) -> str:
+        return self._var_name
+
     def print_formula(self):
-        print(self._var_name, end="")
+        print(self.to_string(), end="")
 
     def get_var_name(self) -> str:
         return self._var_name
@@ -176,12 +192,18 @@ class Function(Formula):
         self._negation = False
         self._assigned = True
 
-    def print_formula(self):
+    def to_string(self) -> str:
+        result = ""
         if self._negation:
-            print("¬", end="")
-        print(self._func_name + "(", end="")
-        self._inside.print_formula()
-        print(")", end="")
+            result += "¬"
+        result += self._func_name
+        result += "("
+        result += self._inside.to_string()
+        result += ")"
+        return result
+
+    def print_formula(self):
+        print(self.to_string(), end="")
 
     def get_func_name(self) -> str:
         return self._func_name

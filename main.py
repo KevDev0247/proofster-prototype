@@ -85,8 +85,8 @@ def input_formula(formula_input: [str]) -> Formula:
                 Binary(left, right, Connective.OR)
             )
         if part == "FORM":
-            func_name = input_list[p + 1]
-            var_name = input_list[p + 2]
+            func_name = formula_input[p + 1]
+            var_name = formula_input[p + 2]
 
             if var_name not in var_count:
                 var_count[var_name] = 1
@@ -104,7 +104,7 @@ def input_formula(formula_input: [str]) -> Formula:
             )
         if part == "FORALL":
             inside = formula_holder.pop()
-            var_name = input_list[p + 1]
+            var_name = formula_input[p + 1]
 
             if var_name not in var_count:
                 var_count[var_name] = 1
@@ -114,7 +114,7 @@ def input_formula(formula_input: [str]) -> Formula:
             )
         if part == "EXIST":
             inside = formula_holder.pop()
-            var_name = input_list[p + 1]
+            var_name = formula_input[p + 1]
 
             if var_name not in var_count:
                 var_count[var_name] = 1
