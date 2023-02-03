@@ -9,12 +9,11 @@ class Formula(ABC):
         self._var_count = {}
         self._quant_list = []
 
-    @abstractmethod
-    def to_string(self) -> str:
-        pass
+    def print_formula(self):
+        print(self.to_string(), end="")
 
     @abstractmethod
-    def print_formula(self):
+    def to_string(self) -> str:
         pass
 
     @abstractmethod
@@ -65,9 +64,6 @@ class Binary(Formula):
         result += self._right.to_string()
         result += ")"
         return result
-
-    def print_formula(self):
-        print(self.to_string(), end="")
 
     def get_left(self) -> Formula:
         return self._left
@@ -128,9 +124,6 @@ class Unary(Formula):
         result += self._inside.to_string()
         return result
 
-    def print_formula(self):
-        print(self.to_string(), end="")
-
     def get_quantifier(self) -> Quantifier:
         return self._quantifier
 
@@ -171,9 +164,6 @@ class Variable(Formula):
     def to_string(self) -> str:
         return self._var_name
 
-    def print_formula(self):
-        print(self.to_string(), end="")
-
     def get_var_name(self) -> str:
         return self._var_name
 
@@ -201,9 +191,6 @@ class Function(Formula):
         result += self._inside.to_string()
         result += ")"
         return result
-
-    def print_formula(self):
-        print(self.to_string(), end="")
 
     def get_func_name(self) -> str:
         return self._func_name
