@@ -1,16 +1,37 @@
+import json
 from abc import ABC, abstractmethod
 from typing import Dict, List, Tuple
 from enums import Connective, Type, Quantifier
 
 
 class Formula(ABC):
-    def __init__(self, formula_type: Type):
+    def __init__(
+            self,
+            formula_type: Type,
+            var_count=None,
+            quant_list=None
+    ):
+        if var_count is None:
+            var_count = {}
+        if quant_list is None:
+            quant_list = []
         self._formula_type = formula_type
-        self._var_count = {}
-        self._quant_list = []
+        self._var_count = var_count
+        self._quant_list = quant_list
+
+    def print_json(self):
+        print(self.to_json())
 
     def print_formula(self):
         print(self.to_string(), end="")
+
+    @abstractmethod
+    def to_json(self) -> json:
+        pass
+
+    @abstractmethod
+    def from_json(self, json_data) -> 'Formula':
+        pass
 
     @abstractmethod
     def to_string(self) -> str:
@@ -43,13 +64,47 @@ class Binary(Formula):
             self,
             left: Formula,
             right: Formula,
-            connective: Connective
+            connective: Connective,
+            is_clause=False,
+            var_count=None,
+            quant_list=None
     ):
-        super().__init__(Type.BINARY)
+        super().__init__(
+            Type.BINARY,
+            var_count,
+            quant_list
+        )
         self._left = left
         self._connective = connective
         self._right = right
-        self._is_clause = False
+        self._is_clause = is_clause
+
+    def to_json(self) -> json:
+        return {
+            'left': self._left.to_json(),
+            'right': self._right.to_json(),
+            'connective': self._connective,
+            'is_clause': self._is_clause,
+            'var_count': self._var_count,
+            'quant_list': self._quant_list
+        }
+
+    def from_json(self, json_data) -> Formula:
+        left = self._left.from_json(json_data['left'])
+        right = self._right.from_json(json_data['right'])
+        connective = Connective(json_data['connective'])
+        is_clause = json_data['is_clause']
+        var_count = json_data['var_count']
+        quant_list = json_data['quant_list']
+
+        return Binary(
+            left,
+            right,
+            connective,
+            is_clause,
+            var_count,
+            quant_list
+        )
 
     def to_string(self) -> str:
         result = "(" + self._left.to_string()
@@ -105,13 +160,46 @@ class Unary(Formula):
             inside: Formula,
             quantifier: Quantifier,
             negation: bool,
-            quant_var: str
+            quant_var: str,
+            var_count=None,
+            quant_list=None
     ):
-        super().__init__(Type.UNARY)
-        self._quantifier = quantifier
+        super().__init__(
+            Type.UNARY,
+            var_count,
+            quant_list
+        )
         self._inside = inside
-        self._quant_var = quant_var
+        self._quantifier = quantifier
         self._negation = negation
+        self._quant_var = quant_var
+
+    def to_json(self) -> json:
+        return {
+            'inside': self._inside.to_json(),
+            'quantifier': self._quantifier,
+            'negation': self._negation,
+            'quant_var': self._quant_var,
+            'var_count': self._var_count,
+            'quant_list': self._quant_list
+        }
+
+    def from_json(self, json_data) -> Formula:
+        inside = self._inside.to_json()
+        quantifier = self._quantifier
+        negation = self._negation
+        quant_var = self._quant_var
+        var_count = json_data['var_count']
+        quant_list = json_data['quant_list']
+
+        return Unary(
+            inside,
+            quantifier,
+            negation,
+            quant_var,
+            var_count,
+            quant_list
+        )
 
     def to_string(self) -> str:
         result = ""
@@ -157,9 +245,36 @@ class Unary(Formula):
 
 
 class Variable(Formula):
-    def __init__(self, var_name):
-        super().__init__(Type.VARIABLE)
+    def __init__(
+            self,
+            var_name,
+            var_count=None,
+            quant_list=None
+    ):
+        super().__init__(
+            Type.VARIABLE,
+            var_count,
+            quant_list
+        )
         self._var_name = var_name
+
+    def to_json(self) -> json:
+        return {
+            'var_name': self._var_name,
+            'var_count': self._var_count,
+            'quant_list': self._quant_list
+        }
+
+    def from_json(self, json_data) -> Formula:
+        var_name = self._var_name
+        var_count = json_data['var_count']
+        quant_list = json_data['quant_list']
+
+        return Variable(
+            var_name,
+            var_count,
+            quant_list
+        )
 
     def to_string(self) -> str:
         return self._var_name
@@ -175,12 +290,51 @@ class Variable(Formula):
 
 
 class Function(Formula):
-    def __init__(self, name: str, inside: Formula):
-        super().__init__(Type.FUNCTION)
-        self._func_name = name
+    def __init__(
+            self,
+            func_name: str,
+            inside: Formula,
+            negation=False,
+            assigned=True,
+            var_count=None,
+            quant_list=None
+    ):
+        super().__init__(
+            Type.FUNCTION,
+            var_count,
+            quant_list
+        )
+        self._func_name = func_name
         self._inside = inside
-        self._negation = False
-        self._assigned = True
+        self._negation = negation
+        self._assigned = assigned
+
+    def to_json(self) -> json:
+        return {
+            'func_name': self._func_name,
+            'inside': self._inside.to_json(),
+            'negation': self._negation,
+            'assigned': self._assigned,
+            'var_count': self._var_count,
+            'quant_list': self._quant_list
+        }
+
+    def from_json(self, json_data) -> Formula:
+        func_name = self._func_name
+        inside = self._inside.to_json()
+        negation = self._negation
+        assigned = self._assigned
+        var_count = json_data['var_count']
+        quant_list = json_data['quant_list']
+
+        return Function(
+            func_name,
+            inside,
+            negation,
+            assigned,
+            var_count,
+            quant_list
+        )
 
     def to_string(self) -> str:
         result = ""

@@ -40,6 +40,8 @@ class PreProcessor:
                         print("∀" + item[1], end="")
             formula.print_formula()
             print("")
+            formula.print_json()
+            print("")
 
     def print_clauses(self):
         for p, premise in enumerate(self._premises):
