@@ -30,10 +30,6 @@ class Formula(ABC):
         pass
 
     @abstractmethod
-    def from_json(self, json_data) -> 'Formula':
-        pass
-
-    @abstractmethod
     def to_string(self) -> str:
         pass
 
@@ -81,30 +77,14 @@ class Binary(Formula):
 
     def to_json(self) -> json:
         return {
+            'formula_type': self._formula_type.value,
             'left': self._left.to_json(),
             'right': self._right.to_json(),
-            'connective': self._connective,
+            'connective': self._connective.value,
             'is_clause': self._is_clause,
             'var_count': self._var_count,
             'quant_list': self._quant_list
         }
-
-    def from_json(self, json_data) -> Formula:
-        left = self._left.from_json(json_data['left'])
-        right = self._right.from_json(json_data['right'])
-        connective = Connective(json_data['connective'])
-        is_clause = json_data['is_clause']
-        var_count = json_data['var_count']
-        quant_list = json_data['quant_list']
-
-        return Binary(
-            left,
-            right,
-            connective,
-            is_clause,
-            var_count,
-            quant_list
-        )
 
     def to_string(self) -> str:
         result = "(" + self._left.to_string()
@@ -176,30 +156,14 @@ class Unary(Formula):
 
     def to_json(self) -> json:
         return {
+            'formula_type': self._formula_type.value,
             'inside': self._inside.to_json(),
-            'quantifier': self._quantifier,
+            'quantifier': self._quantifier.value,
             'negation': self._negation,
             'quant_var': self._quant_var,
             'var_count': self._var_count,
             'quant_list': self._quant_list
         }
-
-    def from_json(self, json_data) -> Formula:
-        inside = self._inside.to_json()
-        quantifier = self._quantifier
-        negation = self._negation
-        quant_var = self._quant_var
-        var_count = json_data['var_count']
-        quant_list = json_data['quant_list']
-
-        return Unary(
-            inside,
-            quantifier,
-            negation,
-            quant_var,
-            var_count,
-            quant_list
-        )
 
     def to_string(self) -> str:
         result = ""
@@ -260,21 +224,11 @@ class Variable(Formula):
 
     def to_json(self) -> json:
         return {
+            'formula_type': self._formula_type.value,
             'var_name': self._var_name,
             'var_count': self._var_count,
             'quant_list': self._quant_list
         }
-
-    def from_json(self, json_data) -> Formula:
-        var_name = self._var_name
-        var_count = json_data['var_count']
-        quant_list = json_data['quant_list']
-
-        return Variable(
-            var_name,
-            var_count,
-            quant_list
-        )
 
     def to_string(self) -> str:
         return self._var_name
@@ -311,6 +265,7 @@ class Function(Formula):
 
     def to_json(self) -> json:
         return {
+            'formula_type': self._formula_type.value,
             'func_name': self._func_name,
             'inside': self._inside.to_json(),
             'negation': self._negation,
@@ -321,7 +276,7 @@ class Function(Formula):
 
     def from_json(self, json_data) -> Formula:
         func_name = self._func_name
-        inside = self._inside.to_json()
+        inside = self._inside.from_json(json_data['inside'])
         negation = self._negation
         assigned = self._assigned
         var_count = json_data['var_count']

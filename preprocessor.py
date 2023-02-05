@@ -13,6 +13,69 @@ def print_clause(clause_group: [[Formula]]):
     print("")
 
 
+def create_formula_from_json(json_data) -> Formula:
+    formula_type = json_data['formula_type']
+
+    if Type(formula_type) == Type.BINARY:
+        left = create_formula_from_json(json_data['left'])
+        right = create_formula_from_json(json_data['right'])
+        connective = Connective(json_data['connective'])
+        is_clause = json_data['is_clause']
+        var_count = json_data['var_count']
+        quant_list = json_data['quant_list']
+
+        return Binary(
+            left,
+            right,
+            connective,
+            is_clause,
+            var_count,
+            quant_list
+        )
+    if Type(formula_type) == Type.UNARY:
+        inside = create_formula_from_json(json_data['inside'])
+        quantifier = Quantifier(json_data['quantifier'])
+        negation = json_data['negation']
+        quant_var = json_data['quant_var']
+        var_count = json_data['var_count']
+        quant_list = json_data['quant_list']
+
+        return Unary(
+            inside,
+            quantifier,
+            negation,
+            quant_var,
+            var_count,
+            quant_list
+        )
+    if Type(formula_type) == Type.VARIABLE:
+        var_name = json_data['var_name']
+        var_count = json_data['var_count']
+        quant_list = json_data['quant_list']
+
+        return Variable(
+            var_name,
+            var_count,
+            quant_list
+        )
+    if Type(formula_type) == Type.FUNCTION:
+        func_name = json_data['func_name']
+        inside = create_formula_from_json(json_data['inside'])
+        negation = json_data['negation']
+        assigned = json_data['assigned']
+        var_count = json_data['var_count']
+        quant_list = json_data['quant_list']
+
+        return Function(
+            func_name,
+            inside,
+            negation,
+            assigned,
+            var_count,
+            quant_list
+        )
+
+
 class PreProcessor:
     def __init__(self, arg: [Formula]):
         self._arg = arg
@@ -40,12 +103,12 @@ class PreProcessor:
                         print("∀" + item[1], end="")
             formula.print_formula()
             print("")
-            formula.print_json()
+            create_formula_from_json(formula.to_json()).print_formula()
             print("")
 
     def print_clauses(self):
         for p, premise in enumerate(self._premises):
-            print("Premise " + str(p+1) + ": ", end="")
+            print("Premise " + str(p + 1) + ": ", end="")
             print_clause(premise)
         print("¬Conclusion ", end="")
         print_clause(self._negated_conclusion[0])
