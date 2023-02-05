@@ -274,23 +274,6 @@ class Function(Formula):
             'quant_list': self._quant_list
         }
 
-    def from_json(self, json_data) -> Formula:
-        func_name = self._func_name
-        inside = self._inside.from_json(json_data['inside'])
-        negation = self._negation
-        assigned = self._assigned
-        var_count = json_data['var_count']
-        quant_list = json_data['quant_list']
-
-        return Function(
-            func_name,
-            inside,
-            negation,
-            assigned,
-            var_count,
-            quant_list
-        )
-
     def to_string(self) -> str:
         result = ""
         if self._negation:
