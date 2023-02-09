@@ -1,20 +1,20 @@
-from enum import IntEnum
+from enum import Enum
 
 
-class Quantifier(IntEnum):
+class Quantifier(Enum):
     EXISTENTIAL = 1
     UNIVERSAL = 2
     NONE = 3
 
 
-class Connective(IntEnum):
+class Connective(Enum):
     IMPLICATION = 1
     BICONDITIONAL = 2
     AND = 3
     OR = 4
 
 
-class Type(IntEnum):
+class Type(Enum):
     UNARY = 1
     BINARY = 2
     FUNCTION = 3
