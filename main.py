@@ -145,7 +145,7 @@ def preprocess(preprocessor: PreProcessor) -> PreProcessor:
     print("")
 
     print("Executing Step 2. Turning arguments into ∃-free Prenex Normal Form")
-    preprocessor.convert_to_prenex()
+    preprocessor.normalize_to_prenex()
     print("Step 2 completed")
     preprocessor.print_argument()
     print("")

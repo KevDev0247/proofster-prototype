@@ -1,3 +1,5 @@
+from typing import List
+
 from enums import Connective, Type, Quantifier
 from formula import Unary, Binary, Variable, Function, Formula
 
@@ -92,19 +94,24 @@ class PreProcessor:
     def get_negated_conclusion(self):
         return self._negated_conclusion
 
-    def print_argument(self):
+    def to_string(self) -> List[str]:
+        result = []
         for formula in self._arg:
+            formula_string = ""
             quant_list = formula.get_quant_list()
-            if len(quant_list) > 0:
-                for item in quant_list:
-                    if item[0] == Quantifier.EXISTENTIAL:
-                        print("∃" + item[1], end="")
-                    if item[0] == Quantifier.UNIVERSAL:
-                        print("∀" + item[1], end="")
-            formula.print_formula()
-            print("")
-            create_formula_from_json(formula.to_json()).print_formula()
-            print("")
+            for quant, var in quant_list:
+                if quant == Quantifier.EXISTENTIAL:
+                    formula_string += "∃" + var
+                if quant == Quantifier.UNIVERSAL:
+                    formula_string += "∀" + var
+            formula_string += formula.to_string()
+            result.append(formula_string)
+        return result
+
+    def print_argument(self):
+        formulas_strings = self.to_string()
+        for formula_string in formulas_strings:
+            print(formula_string)
 
     def print_clauses(self):
         for p, premise in enumerate(self._premises):
@@ -243,7 +250,7 @@ class PreProcessor:
                 formula.set_var(var_name + str(self._subscript))
         return formula
 
-    def move_quantifiers_to_front(self, formula: Formula, quant_list: []) -> Formula:
+    def move_quantifiers_to_front(self, formula: Formula, quant_list: List[tuple]) -> Formula:
         formula_type = formula.get_formula_type()
         if formula_type == Type.BINARY:
             quant_list = self.move_quantifiers_to_front(
@@ -300,7 +307,7 @@ class PreProcessor:
                         )
         return formula
 
-    def convert_to_prenex(self):
+    def normalize_to_prenex(self):
         print("Sub step 1. removing arrows")
         for f, formula in enumerate(self._arg):
             self._arg[f] = self.remove_arrows(formula)
