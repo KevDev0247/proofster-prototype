@@ -250,7 +250,7 @@ class PreProcessor:
                 formula.set_var(var_name + str(self._subscript))
         return formula
 
-    def move_quantifiers_to_front(self, formula: Formula, quant_list: List[tuple]) -> Formula:
+    def move_quantifiers_to_front(self, formula: Formula, quant_list: List[tuple]) -> List[tuple]:
         formula_type = formula.get_formula_type()
         if formula_type == Type.BINARY:
             quant_list = self.move_quantifiers_to_front(
