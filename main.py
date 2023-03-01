@@ -1,4 +1,6 @@
 import fileinput
+from typing import List
+
 from enums import Connective, Quantifier, Type
 from formula import Unary, Binary, Variable, Function, Formula
 from preprocessor import PreProcessor
@@ -193,8 +195,37 @@ def process_commands(cmd: str, user_input: []):
         )
 
 
+def shunting_yard(tokens: List[str]):
+    postfix_queue = []
+    operator_stack = []
+
+    for t, token in enumerate(tokens):
+        if token == "FORM":
+            function = [token, tokens[t + 1], tokens[t + 2]]
+            postfix_queue.insert(0, function)
+        if token == "FORALL" or token == "EXIST":
+            quantifier = [token, tokens[t + 1]]
+            operator_stack.append(quantifier)
+        if token == "->" or token == "<->" or token == "AND" or token == "OR" or token == "NOT":
+            operator_stack.append(token)
+
+    while operator_stack:
+        postfix_queue.append(operator_stack.pop())
+
+    postfix_string = ""
+    for item in postfix_queue:
+        if isinstance(item, list):
+            postfix_string += ' '.join(item) + ' '
+        else:
+            postfix_string += item + ' '
+    print(postfix_string)
+
+
 shared = Shared()
 for line in fileinput.input(files='/Users/Kevin/Projects/proofster-prototype/test3.txt'):
     input_list = line.split()
     command = input_list.pop(0)
-    process_commands(command, input_list)
+    # process_commands(command, input_list)
+
+infix = "FORALL x FORM F x -> NOT FORM H x AND FORM G x".split()
+shunting_yard(infix)
