@@ -208,9 +208,16 @@ def shunting_yard(tokens: List[str]):
             operator_stack.append(quantifier)
         if token == "->" or token == "<->" or token == "AND" or token == "OR" or token == "NOT":
             operator_stack.append(token)
+        if token == ")":
+            operator = operator_stack.pop()
+            postfix_queue.insert(0, operator)
+
+        print("stack", operator_stack)
+        print("queue", postfix_queue)
 
     while operator_stack:
-        postfix_queue.append(operator_stack.pop())
+        postfix_queue.insert(0, operator_stack.pop())
+    postfix_queue.reverse()
 
     postfix_string = ""
     for item in postfix_queue:
@@ -221,6 +228,9 @@ def shunting_yard(tokens: List[str]):
     print(postfix_string)
 
 
+# x F(x) H(x) ¬ G(x) ∧ ⇒ ∀
+# FORM H x FORM F x NOT FORM G x AND -> FORALL x
+# FORM F x FORM H x FORM G x AND NOT -> FORALL x
 shared = Shared()
 for line in fileinput.input(files='/Users/Kevin/Projects/proofster-prototype/test3.txt'):
     input_list = line.split()
