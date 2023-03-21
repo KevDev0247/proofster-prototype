@@ -1,6 +1,6 @@
 # Proofster
 
-Work in Progress! An automatic theorem assistant and prover (potentially) for first order logic using the resolution procedure learnt in CS 245 Logic and Computation course at University of Waterloo. Currently, the preprocessor is functional! Preprocessor is capable of producing a set of clauses for premises and negated conclusions from the user inputted premises and conclusions. Some of the algorithms like CNF Conversions, Arrow Removing, Moving Negation Inwards are also useful for general first order logic algebra
+Before Proofster was built into a web app with several microservices and a domain layer running in the backend, the project simply exist as a series of Python scripts that I wrote to prototype the project. Some of the files were hundreds of lines. They were eventually abstracted into layers and packed into modules that forms the new architecture in the proofster project.
 
 ## Demo
 <p float="left">
