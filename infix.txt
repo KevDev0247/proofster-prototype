@@ -1,0 +1,21 @@
+input FORM F y FORM G y AND FORM F x FORM G x -> OR EXIST y FORALL x
+input FORM F x FORM H x NOT -> FORALL x
+input FORM F x FORM G x NOT -> FORALL x
+input FORM F x NOT FORALL x
+
+FORM A x FORM B x AND FORM C x FORM D x AND OR FORM E x FORM F x AND FORM G x FORM H x AND OR OR
+
+FORALL x EXIST y ( ( FORM F y AND FORM G y ) OR NOT ( FORM F x -> FORM G x ) )
+FORALL x ( FORM F x -> NOT ( FORM H x ) )
+FORALL x ( FORM F x -> NOT ( FORM G x ) )
+FORALL x ( NOT ( FORM F x ) )
+
+( ( ( FORM A x AND FORM B x ) OR ( FORM C x AND FORM D x ) ) OR ( ( FORM E x AND FORM F x ) OR ( FORM G x AND FORM H x ) ) )
+
+ ∀x  (  ¬  (  F(x)  )  )
+ ∀x  (  F(x)  ⇒  ¬  (  G(x)  )  )
+ ∀x  (  F(x)  ⇒  ¬  (  H(x)  )  )
+ ∀x  ∃y  (  (  F(y)  ∧  G(y)  )  ∨  ¬  (  F(x)  ⇒  G(x)  )  )
+
+ (  (  (  A(x)  ∧  B(x)  )  ∨  (  C(x)  ∧  D(x)  )  )  ∨  (  (  E(x)  ∧  F(x)  )  ∨  (  G(x)  ∧  H(x)  )  )  )
+

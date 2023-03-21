@@ -195,7 +195,7 @@ def process_commands(cmd: str, user_input: []):
         )
 
 
-def shunting_yard(tokens: List[str]):
+def execute_shunting_yard(tokens: List[str]):
     postfix_queue = []
     operator_stack = []
 
@@ -211,7 +211,6 @@ def shunting_yard(tokens: List[str]):
         if token == ")":
             operator = operator_stack.pop()
             postfix_queue.insert(0, operator)
-
         print("stack", operator_stack)
         print("queue", postfix_queue)
 
@@ -219,12 +218,12 @@ def shunting_yard(tokens: List[str]):
         postfix_queue.insert(0, operator_stack.pop())
     postfix_queue.reverse()
 
-    postfix_string = ""
+    postfix_string = []
     for item in postfix_queue:
         if isinstance(item, list):
-            postfix_string += ' '.join(item) + ' '
+            postfix_string.append(' '.join(item))
         else:
-            postfix_string += item + ' '
+            postfix_string.append(item)
     print(postfix_string)
 
 
@@ -232,10 +231,10 @@ def shunting_yard(tokens: List[str]):
 # FORM H x FORM F x NOT FORM G x AND -> FORALL x
 # FORM F x FORM H x FORM G x AND NOT -> FORALL x
 shared = Shared()
-for line in fileinput.input(files='/Users/Kevin/Projects/proofster-prototype/test3.txt'):
+for line in fileinput.input(files='/Users/Kevin/Projects/proofster-prototype/test2.txt'):
     input_list = line.split()
     command = input_list.pop(0)
-    # process_commands(command, input_list)
+    process_commands(command, input_list)
 
-infix = "FORALL x FORM F x -> NOT FORM H x AND FORM G x".split()
-shunting_yard(infix)
+infix = "( ( ( FORM A x AND FORM B x ) OR ( FORM C x AND FORM D x ) ) OR ( ( FORM E x AND FORM F x ) OR ( FORM G x AND FORM H x ) ) )".split()
+execute_shunting_yard(infix)
